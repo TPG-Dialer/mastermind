@@ -58,7 +58,7 @@ jobs:
 
       - name: Apply migrations
         run: |
-          supabase db push --include-all --yes -p "$SUPABASE_DB_PASSWORD" > push.log 2>&1 || { tail -n 150 push.log; exit 1; }
+          supabase db push --linked --include-all --yes -p "$SUPABASE_DB_PASSWORD" > push.log 2>&1 || { tail -n 150 push.log; exit 1; }
           tail -n 40 push.log
 
       - name: Deploy Edge Functions
