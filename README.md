@@ -216,3 +216,4 @@ How the app behaves with it:
 
 Database changes after the first deploy go in `supabase/migrations_extra/NNNN_name.sql` (the deploy workflow copies them after the original four). `0005_contacts_admin.sql` tightens one rule: a member can't move their contact row to someone else's id.
 
+
