@@ -20,6 +20,10 @@ env:
   APP_URL: https://tpg-dialer.github.io/mastermind/
   ALLOWED_ORIGINS: https://tpg-dialer.github.io,http://localhost:8000,http://localhost:8765
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -53,12 +57,15 @@ jobs:
         run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
 
       - name: Apply migrations
-        run: supabase db push --include-all
+        run: |
+          set -o pipefail
+          supabase db push --include-all --debug 2>&1 | tail -n 150 | tee push.log
 
       - name: Deploy Edge Functions
         run: |
+          set -o pipefail
           for fn in join schedule-notifications send-notifications generate-meetings; do
-            supabase functions deploy "$fn" --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
+            supabase functions deploy "$fn" --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt 2>&1 | tail -n 60 | tee -a push.log
           done
 
       - name: Set function secrets (dry-run until channels are configured)
@@ -68,3 +75,11 @@ jobs:
             DRY_RUN=true \
             APP_URL="$APP_URL" \
             ALLOWED_ORIGINS="$ALLOWED_ORIGINS"
+
+      - name: Report failure as an issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          { echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"; echo; echo '```'; sed -e "s/$SUPABASE_DB_PASSWORD/***/g" -e "s/$CRON_SECRET/***/g" push.log 2>/dev/null | tail -n 120; echo '```'; } > body.md
+          gh issue create --title "Supabase deploy failed (run $GITHUB_RUN_NUMBER)" --body-file body.md --label deploy || true
