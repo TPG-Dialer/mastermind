@@ -236,7 +236,10 @@ export async function handle(req: Request): Promise<Response> {
       ? await sendEmail({ to: email!, from: emailFrom(groupName), ...codeEmail(groupName, code) }, { ignoreDryRun: true })
       : await sendSms({ to: phone!, text: codeSms(groupName, code) }, { ignoreDryRun: true });
     const devShow = env("DEV_SHOW_CODES") === "true";
-    if (!res.ok || (res.dry && !devShow)) {
+    // In test mode (DEV_SHOW_CODES=true) the code is returned to the app even when sending is in
+    // dry-run or fails, so sign-in can be tested before email/SMS are fully set up.
+    const showCode = devShow && (res.dry || !res.ok);
+    if (!res.ok && !devShow || (res.dry && !devShow)) {
       await db.from("login_codes").delete().eq("member_id", member.id);
       const detail = res.dry
         ? (channel === "email" ? "Email sending isn't set up yet (no RESEND_API_KEY)." : "Texting isn't set up yet.")
@@ -244,10 +247,11 @@ export async function handle(req: Request): Promise<Response> {
       console.error(`[join] code not sent: group=${group} member=${member.id} channel=${channel}: ${detail}`);
       return json(req, { error: "We couldn't send the code; ask your admin.", detail, code: "send_failed" }, 503);
     }
+    if (!res.ok) console.error(`[join] code send failed (shown in app, DEV_SHOW_CODES=true): ${res.error ?? "unknown"}`);
     if (res.dry) console.log(`[join] dry-run code for ${member.id} returned to the app (DEV_SHOW_CODES=true)`);
     return json(req, {
       sent: true, channel, maskedTo, resendAfter: RESEND_SECONDS, expiresIn: CODE_TTL_MINUTES * 60, options, smsAvailable,
-      ...(res.dry ? { devCode: code } : {}),
+      ...(showCode ? { devCode: code, sendError: res.ok ? undefined : (res.error ?? 'send failed') } : {}),
     });
   }
 
