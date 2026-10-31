@@ -52,6 +52,7 @@ What the messages contain:
 | `schedule_change` | meeting or training time or place changes (admin edit, or a rule change re-timing it) | everyone | SMS + push |
 | `notes_ready` | Zoom AI Companion notes land on a meeting (on arrival, or when an admin files unmatched ones) | everyone | push (email if no push) |
 | `notes_unmatched` | Zoom notes arrived but didn't match a meeting | admins | push + email |
+| `self_enrolled` | A member signed in for the first time with an email/phone they typed (0009) | the group's other admins | push (email if no push) |
 
 Notes an admin types in the app don't notify anyone; Home shows "Notes from {meeting}" until each person opens them.
 

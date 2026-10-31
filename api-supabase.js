@@ -124,7 +124,8 @@
   const byCreated = (a, b) => String(a.createdAt).localeCompare(String(b.createdAt));
   const MAP = {
     members: (r) => ({ id: r.id, name: r.name, role: r.role, bio: r.bio, focus: r.focus,
-      canHelpWith: r.can_help_with || [], workingGenius: r.working_genius || null }),
+      canHelpWith: r.can_help_with || [], workingGenius: r.working_genius || null,
+      enrolledAt: r.enrolled_at || null, enrolledBy: r.enrolled_by || null }),
     meetings: (r) => {
       const m = { id: r.id, datetime: toCentral(r.starts_at), title: r.title, durationMinutes: r.duration_minutes,
         agenda: r.agenda || [], hotSeatMemberId: r.hot_seat_member_id, hotSeatPrep: r.hot_seat_prep || null,
@@ -179,7 +180,7 @@
 
   // What each collection fetches. RLS decides which rows come back.
   const QUERY = {
-    members: 'members?select=id,name,role,bio,focus,can_help_with,working_genius,sort_order&removed_at=is.null&order=sort_order.asc,name.asc',
+    members: 'members?select=id,name,role,bio,focus,can_help_with,working_genius,sort_order,enrolled_at,enrolled_by&removed_at=is.null&order=sort_order.asc,name.asc',
     meetings: 'meetings?select=*,meeting_rsvps(member_id,status),meeting_attendance(member_id)&cancelled_at=is.null&order=starts_at.asc',
     commitments: 'commitments?select=*&order=created_at.asc',
     goals: 'goals?select=*&order=created_at.asc',
@@ -345,7 +346,7 @@
   }
 
   const defaultDeviceLabel = () => (navigator.userAgent.match(/iPhone|iPad|Android|Mac|Windows/) || [''])[0];
-  // After verify-code (or the bootstrap join): keep the token, forget the invite code.
+  // After verify-code: keep the token, forget the invite code.
   function startSession(res) {
     session.set({ token: res.sessionToken, memberId: res.member.id, createdAt: nowISO() });
     store.set('user', res.member.id);
@@ -725,34 +726,31 @@
     },
     /* Login, step 2: pick your name -> a 6-digit code goes to your email or phone.
        Resolves to one of (see supabase/functions/join/index.ts):
-         { sent: true, channel, maskedTo, resendAfter, expiresIn, options, smsAvailable, devCode? }
+         { sent: true, channel, maskedTo, resendAfter, expiresIn, options, smsAvailable, devCode?, enroll? }
          { sent: false, active: true, ... }   a code from a moment ago is still good
          { choose: true, options }            email and text both possible: call again with a channel
-         { bootstrap: true }                  nobody in the group has a contact yet: call join()
-       Rejects with an ApiError whose .code says why (no_contact, no_channel, resend_wait,
-       too_many_codes, send_failed with .detail, bad_invite). */
-    async requestCode(memberId, channel) {
+         { enroll: true, smsAvailable }       no email or phone on file (first sign-in): call again
+                                              with selfContact { email, phone? } (phone in E.164)
+       selfContact is accepted only while the member has nothing on file; it's saved when
+       the code is verified. Pass it again on resend / switch channel.
+       Rejects with an ApiError whose .code says why (contact_exists, bad_email, bad_phone,
+       no_channel, resend_wait, too_many_codes, send_failed with .detail, bad_invite). */
+    async requestCode(memberId, channel, selfContact) {
       const code = store.get('pendingInvite', null);
       if (!code) throw new ApiError('Enter the invite code first.', 400, 'bad_invite');
-      return callFn('join', Object.assign({ action: 'request-code', group: GROUP, inviteCode: code, memberId }, channel ? { channel } : {}));
+      return callFn('join', Object.assign({ action: 'request-code', group: GROUP, inviteCode: code, memberId },
+        channel ? { channel } : {},
+        selfContact ? { selfContact: { email: selfContact.email || '', phone: selfContact.phone || '' } } : {}));
     },
-    /* Login, step 3: the code from the email or text. Stores the session and the app's 'user' key. */
+    /* Login, step 3: the code from the email or text. Stores the session and the app's 'user' key.
+       Resolves to the member; .enrolled is true when this first sign-in saved their email/phone. */
     async verifyCode(memberId, code, deviceLabel) {
       const invite = store.get('pendingInvite', null);
       if (!invite) throw new ApiError('Enter the invite code first.', 400, 'bad_invite');
       const res = await callFn('join', { action: 'verify-code', group: GROUP, inviteCode: invite, memberId,
         code: String(code || '').replace(/\D/g, ''), deviceLabel: deviceLabel || defaultDeviceLabel() });
-      return startSession(res);
-    },
-    /* First-admin setup only: the server allows a code-free join while nobody in the
-       group has an email or phone (requestCode says { bootstrap: true }); otherwise 403. */
-    async join(memberId, deviceLabel) {
-      const code = store.get('pendingInvite', null);
-      if (!code) throw new ApiError('Enter the invite code first.', 400, 'bad_invite');
-      const res = await callFn('join', { action: 'join', group: GROUP, inviteCode: code, memberId,
-        deviceLabel: deviceLabel || defaultDeviceLabel() });
       const member = startSession(res);
-      if (res.bootstrap) member.bootstrap = true;
+      if (res.enrolled) member.enrolled = true;
       return member;
     },
     async signOut() {
@@ -877,6 +875,9 @@
     async restoreMember(id) { return mutate({ colls: ['members'], send: () => rpc('admin_restore_member', { p_member_id: id }), result: () => findIn('members', id) }); },
     // p: { name?, role?, sortOrder?, email?, phone? }
     async adminUpdateMember(id, p) { return mutate({ colls: ['members'], send: () => rpc('admin_update_member', { p_member_id: id, p }), result: () => findIn('members', id) }); },
+    // Clears the member's email and phone and signs them out everywhere: their next
+    // sign-in adds an email again ("First time here?"). Not for yourself.
+    async adminResetSignin(id) { return mutate({ colls: ['members'], send: () => rpc('admin_reset_member_signin', { p_member_id: id }), result: () => findIn('members', id) }); },
 
     /* Live updates. cb(collections) runs after other members' changes are in the cache.
        Also fired as window event 'mastermind:remote-change'. Returns an unsubscribe function. */

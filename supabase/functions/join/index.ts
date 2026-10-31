@@ -6,22 +6,29 @@
 //
 //   { "action": "request-code", group, inviteCode, memberId, "channel"?: "email" | "sms" }
 //     -> 200 { sent: true, channel, maskedTo, resendAfter: 30, expiresIn: 600, options, smsAvailable, devCode? }
-//        a new 6-digit code was sent (devCode only in dry-run with DEV_SHOW_CODES=true)
+//        a new 6-digit code was sent to the contact on file (devCode only in dry-run with DEV_SHOW_CODES=true)
 //     -> 200 { sent: false, active: true, channel, maskedTo, resendAfter, expiresIn, options, smsAvailable }
 //        no channel asked for and a code is still live: go straight to the code screen
 //     -> 200 { choose: true, options: [{ channel, maskedTo }], smsAvailable }
 //        email and text both possible and no channel given: let the member pick
-//     -> 200 { bootstrap: true, smsAvailable }
-//        nobody in the group has an email or phone yet: call "join" (first admin setup)
-//     -> 409 no_contact | no_channel, 429 resend_wait | too_many_codes, 503 send_failed
+//     -> 200 { enroll: true, smsAvailable }
+//        no email or phone on file: first sign-in. Ask for theirs and call again with selfContact.
+//     -> 409 no_channel, 429 resend_wait | too_many_codes, 503 send_failed
+//
+//   { "action": "request-code", group, inviteCode, memberId, "selfContact": { email, phone? }, "channel"? }
+//     First sign-in on trust: only while the member has NO email or phone on file
+//     (otherwise 409 contact_exists). The code goes to selfContact.email (or by text to
+//     selfContact.phone when channel is "sms" and texting is set up). The contact is held in
+//     login_codes.pending_email/pending_phone and saved to member_contacts only by a right
+//     verify-code. Same answers and rate limits as above, plus enroll: true;
+//     400 bad_email | bad_phone | bad_channel.
 //
 //   { "action": "verify-code", group, inviteCode, memberId, code, deviceLabel }
-//     -> 200 { sessionToken, member: { id, name, role }, groupId }
-//     -> 400 bad_format, 401 wrong_code (attemptsLeft), 410 expired, 429 locked | too_many_tries
-//
-//   { "action": "join", group, inviteCode, memberId, deviceLabel }
-//     -> 200 { sessionToken, member, groupId, bootstrap: true } only while nobody in the
-//        group has a contact; otherwise 403 "Verification required".
+//     -> 200 { sessionToken, member: { id, name, role }, groupId, enrolled? }
+//        enrolled: true = this was a first sign-in; the contact is now on file and the
+//        group's other admins get a "signed in for the first time" notice
+//     -> 400 bad_format, 401 wrong_code (attemptsLeft), 409 contact_exists, 410 expired,
+//        429 locked | too_many_tries
 //
 //   wrong invite code -> 401 bad_invite; too many wrong invite codes from one IP -> 429
 //
@@ -44,11 +51,14 @@ const WRONG_CODES_PER_IP = 15;     // per 15 minutes, across members
 type Channel = "email" | "sms";
 type Body = {
   action?: string; group?: string; inviteCode?: string; memberId?: string; deviceLabel?: string;
-  channel?: string; code?: string;
+  channel?: string; code?: string; selfContact?: { email?: unknown; phone?: unknown } | null;
 };
 type Db = ReturnType<typeof serviceClient>;
 
 const env = (k: string) => Deno.env.get(k) ?? "";
+// Same rules as the member_contacts / login_codes checks in SQL.
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const E164_RE = /^\+[1-9][0-9]{7,14}$/;
 
 /** c•••y@gmail.com */
 export function maskEmail(email: string): string {
@@ -127,10 +137,10 @@ export async function handle(req: Request): Promise<Response> {
 
   let body: Body;
   try { body = await req.json(); } catch { return json(req, { error: "Bad JSON" }, 400); }
-  const action = body.action ?? "join";
+  const action = String(body.action ?? "");
   const group = String(body.group ?? "").trim();
   const invite = String(body.inviteCode ?? "").trim();
-  if (!["roster", "join", "request-code", "verify-code"].includes(action)) return json(req, { error: "Unknown action" }, 400);
+  if (!["roster", "request-code", "verify-code"].includes(action)) return json(req, { error: "Unknown action" }, 400);
   if (!group || !invite) return json(req, { error: "Enter the invite code from your invite.", code: "bad_invite" }, 400);
 
   const db = serviceClient();
@@ -163,41 +173,53 @@ export async function handle(req: Request): Promise<Response> {
 
   const { data: contact, error: cErr } = await db.rpc("login_contact", { p_group_id: group, p_member_id: member.id });
   if (cErr || !contact) return json(req, { error: cErr?.message ?? "Couldn't read contacts" }, 500);
-  const email: string | null = contact.email || null;
-  const phone: string | null = contact.phone || null;
-
-  // ---- join: only while the group has no contacts at all (first admin setup).
-  if (action === "join") {
-    if (contact.groupHasContact) {
-      return json(req, { error: "Verification required", code: "verification_required" }, 403);
-    }
-    const s = await createSession(req, db, member, group, body.deviceLabel);
-    if ("error" in s) return json(req, { error: s.error }, 500);
-    await logAttempt(db, { group_id: group, ip_hash: ipHash, ok: true, kind: "bootstrap", member_id: member.id });
-    console.log(`[join] bootstrap sign-in without a code: group=${group} member=${member.id} (no contacts in the group yet)`);
-    return json(req, { ...s, bootstrap: true });
-  }
-
-  const options: { channel: Channel; maskedTo: string }[] = [];
-  if (email) options.push({ channel: "email", maskedTo: maskEmail(email) });
-  if (phone && smsAvailable) options.push({ channel: "sms", maskedTo: maskPhone(phone) });
+  const onFile = { email: (contact.email || null) as string | null, phone: (contact.phone || null) as string | null };
 
   // ---- request-code
   if (action === "request-code") {
-    if (!email && !phone) {
-      if (!contact.groupHasContact) return json(req, { bootstrap: true, smsAvailable });
-      return json(req, { error: "Ask your admin to add your email or phone first.", code: "no_contact" }, 409);
+    const hasContact = !!(onFile.email || onFile.phone);
+    const self = body.selfContact != null;
+    let email = onFile.email, phone = onFile.phone;
+    if (self) {
+      // First sign-in on trust: only while nothing is on file. After that the destination is locked.
+      if (hasContact) {
+        return json(req, { error: "You already have an email or phone on file. Tap your name to get a code.", code: "contact_exists" }, 409);
+      }
+      const sc = body.selfContact as { email?: unknown; phone?: unknown };
+      email = String(sc.email ?? "").trim();
+      if (!email || email.length > 120 || !EMAIL_RE.test(email)) {
+        return json(req, { error: "Check the email address.", code: "bad_email" }, 400);
+      }
+      const rawPhone = String(sc.phone ?? "").trim();
+      phone = rawPhone ? rawPhone.replace(/[\s().-]/g, "") : null;
+      if (phone && !E164_RE.test(phone)) {
+        return json(req, { error: "Enter a 10-digit US mobile number, or leave it blank.", code: "bad_phone" }, 400);
+      }
+    } else if (!hasContact) {
+      return json(req, { enroll: true, smsAvailable });
     }
+
+    const options: { channel: Channel; maskedTo: string }[] = [];
+    if (email) options.push({ channel: "email", maskedTo: maskEmail(email) });
+    if (phone && smsAvailable) options.push({ channel: "sms", maskedTo: maskPhone(phone) });
     if (!options.length) {
       return json(req, { error: "Texting isn't set up yet. Ask your admin to add your email.", code: "no_channel" }, 409);
     }
-    const want = body.channel == null || body.channel === "" ? null : String(body.channel);
+    // A first sign-in sends to the email unless text is asked for: no "choose", no reuse of a live code.
+    const want = body.channel == null || body.channel === "" ? (self ? "email" : null) : String(body.channel);
     if (want && !options.some((o) => o.channel === want)) {
       return json(req, { error: want === "sms" ? "Texting isn't available. Use email instead." : "There's no email on file. Use text instead.", code: "bad_channel" }, 400);
     }
 
-    const { data: existing } = await db.from("login_codes").select("channel, sent_to_masked, attempts, created_at, expires_at")
+    const { data: row } = await db.from("login_codes")
+      .select("channel, sent_to_masked, attempts, created_at, expires_at, pending_email, pending_phone")
       .eq("member_id", member.id).maybeSingle();
+    // Only a code for this same destination counts (for "still live" and the resend wait):
+    // a first-sign-in code to another address, or a stale one, is simply replaced.
+    const sameDest = !!row && (self
+      ? row.pending_email === email && (row.pending_phone ?? null) === (phone ?? null)
+      : row.pending_email == null && row.pending_phone == null);
+    const existing = sameDest ? row : null;
     const now = Date.now();
     const age = existing ? (now - Date.parse(existing.created_at)) / 1000 : Infinity;
     const live = !!existing && Date.parse(existing.expires_at) > now && existing.attempts < 5;
@@ -226,6 +248,7 @@ export async function handle(req: Request): Promise<Response> {
     const { error: upErr } = await db.from("login_codes").upsert({
       member_id: member.id, group_id: group, code_hash: await loginCodeHash(code), channel, sent_to_masked: maskedTo,
       expires_at: new Date(now + CODE_TTL_MINUTES * 60_000).toISOString(), attempts: 0, created_at: new Date(now).toISOString(),
+      pending_email: self ? email : null, pending_phone: self ? phone : null,
     }, { onConflict: "member_id" });
     if (upErr) return json(req, { error: upErr.message }, 500);
     await logAttempt(db, { group_id: group, ip_hash: ipHash, ok: true, kind: "code_sent", member_id: member.id });
@@ -249,8 +272,10 @@ export async function handle(req: Request): Promise<Response> {
     }
     if (!res.ok) console.error(`[join] code send failed (shown in app, DEV_SHOW_CODES=true): ${res.error ?? "unknown"}`);
     if (res.dry) console.log(`[join] dry-run code for ${member.id} returned to the app (DEV_SHOW_CODES=true)`);
+    if (self) console.log(`[join] first sign-in code: group=${group} member=${member.id} to ${maskedTo}`);
     return json(req, {
       sent: true, channel, maskedTo, resendAfter: RESEND_SECONDS, expiresIn: CODE_TTL_MINUTES * 60, options, smsAvailable,
+      ...(self ? { enroll: true } : {}),
       ...(showCode ? { devCode: code, sendError: res.ok ? undefined : (res.error ?? 'send failed') } : {}),
     });
   }
@@ -266,8 +291,13 @@ export async function handle(req: Request): Promise<Response> {
   if (v.status === "ok") {
     const s = await createSession(req, db, member, group, body.deviceLabel);
     if ("error" in s) return json(req, { error: s.error }, 500);
-    await logAttempt(db, { group_id: group, ip_hash: ipHash, ok: true, kind: "code_ok", member_id: member.id });
-    return json(req, s);
+    const enrolled = v.enrolled === true;
+    await logAttempt(db, { group_id: group, ip_hash: ipHash, ok: true, kind: enrolled ? "self_enroll" : "code_ok", member_id: member.id });
+    if (enrolled) console.log(`[join] first sign-in saved the member's own contact: group=${group} member=${member.id}`);
+    return json(req, enrolled ? { ...s, enrolled: true } : s);
+  }
+  if (v.status === "contact_exists") {
+    return json(req, { error: "Your sign-in details changed. Tap your name again to get a new code.", code: "contact_exists" }, 409);
   }
   if (v.status === "wrong") {
     await logAttempt(db, { group_id: group, ip_hash: ipHash, ok: false, kind: "code_wrong", member_id: member.id });

@@ -27,26 +27,32 @@ Also outside this folder: `../api-supabase.js` (the app's data layer for Supabas
 
 1. A member opens the private link and types the group's invite code.
 2. The app calls the `join` function (`roster`). It checks the code against a hash in `group_invites` and returns the roster, plus `smsAvailable` (true when all four RingCentral secrets are set).
-3. The member taps their name. `join` (`request-code`) makes a 6-digit code, stores only a salted hash in `login_codes` (10 minutes, 5 tries, one per member), and sends it:
-   - by email through Resend, from `"<group name> <reminders@EMAIL_FROM_DOMAIN>"` (default domain `tpgmn.com`), subject "Your <group> sign-in code";
+3. The member taps their name. `join` (`request-code`) makes a 6-digit code, stores only a salted hash in `login_codes` (10 minutes, 5 tries, one per member), and sends it to the email or phone on file:
+   - by email through Resend, from `"<group name> <reminders@EMAIL_FROM_DOMAIN>"` (default domain `tpgmn.com`), subject "<group> sign-in code";
    - or by text through RingCentral: "<group>: your sign-in code is 123456. Expires in 10 minutes."
    With both an email and a phone (and texting set up) it first answers `{ choose: true, options }` and the member picks.
 4. The member types the code. `join` (`verify-code`) checks it with `verify_login_code()` (row lock, counts tries, deletes the code on success), then creates a row in `sessions` and gives the phone a long random token. Only the token's hash is stored.
 5. Every request to the database sends that token in an `x-session-token` header.
 6. Supabase's API (PostgREST) makes request headers readable inside Postgres. The function `current_member_id()` hashes the token, looks it up in `sessions` and returns the member. Every security rule in `policies.sql` is written in terms of `current_member_id()`, `current_group_id()` and `is_admin()`. A session that hasn't been used for 180 days stops working (the app touches it each time it opens).
 
-Exceptions and failures:
-- **No email or phone on file:** 409 "Ask your admin to add your email or phone first." Phone only while texting isn't set up: "Texting isn't set up yet. Ask your admin to add your email."
-- **First sign-in of a new group:** while no active member of the group has an email or phone (`login_contact()`), `request-code` answers `{ bootstrap: true }` and the plain `join` action creates the session without a code. That sign-in is logged (`join_attempts.kind = 'bootstrap'` and the function log). Once anyone has a contact, `join` answers 403 "Verification required".
+First sign-in on trust, locked afterwards (admins and members alike; there is no code-free sign-in):
+- **No email or phone on file:** `request-code` answers `{ enroll: true }` and the app shows "First time here?": email (required) and mobile (optional). The app calls `request-code` again with `selfContact: { email, phone }`. The code goes to that email (or by text when the member asks for it, gave a phone and texting is set up). The typed contact is held only in `login_codes.pending_email` / `pending_phone`.
+- **Right code:** `verify_login_code()` saves that contact to `member_contacts` (only if the member still has none; otherwise 409 `contact_exists` and no session), makes sure the reminder toggles row exists, sets `members.enrolled_at = now()`, `enrolled_by = 'self'`, and queues `self_enrolled` to the group's other admins: "{Name} signed in for the first time using c•••y@gmail.com. If that's not them, open Members and reset their sign-in." (push, email when there's no push). Logged as `join_attempts.kind = 'self_enroll'`.
+- **From then on** codes go only to the contact on file. `selfContact` for a member who has one is refused (409 `contact_exists`), so nobody can redirect someone else's code from the sign-in screen. The member can still change their email and phone in Profile once signed in (they can't clear both).
+- **Admin reset:** Group > Members > a member > Reset sign-in (`admin_reset_member_signin()`, admins of that group, not yourself) removes the member's email and phone and any pending code, signs them out on every device, disables their push and drops their pending reminders. Their next sign-in is a first sign-in again. Members' rows show "Enrolled Oct 31, 2026 (self)" or "(admin)" to admins; contacts an admin enters count as `admin`.
+- If the only admin is the one signing in for the first time, nobody gets the notice. Enter the first admin's email in the database (or another admin's) before handing out the invite if you want one.
+- Phone only on file while texting isn't set up: 409 "Texting isn't set up yet. Ask your admin to add your email."
+
+Other failures:
 - **Sending fails or is in dry-run:** the code is thrown away and the app shows "We couldn't send the code; ask your admin." with the reason. Exception: with the secret `DEV_SHOW_CODES=true`, a dry-run code is returned to the app (`devCode`) and shown on screen, for testing before email is live.
 - **Sign-in codes ignore `DRY_RUN`.** A channel with credentials sends codes even while reminders are still in dry-run, because a code that is never delivered locks the member out.
-- **Rate limits** (`join_attempts`, by `kind`): 10 wrong invite codes per IP per 15 minutes; 5 codes per member and 15 per IP per hour; resend after 30 seconds (switching email/text is allowed right away); 15 wrong codes per IP per 15 minutes; 5 wrong tries per code.
+- **Rate limits** (`join_attempts`, by `kind`), the same for first sign-ins: 10 wrong invite codes per IP per 15 minutes; 5 codes per member and 15 per IP per hour; resend after 30 seconds to the same place (switching email/text, or correcting the typed email on a first sign-in, is allowed right away); 15 wrong codes per IP per 15 minutes; 5 wrong tries per code.
 
 Why a header and not a token passed to every function: with the header, the app can read and write tables directly (filters, joins, upserts) and the database still knows who's asking on every row. Passing the token as a function argument would mean writing a database function for every screen.
 
 No token, a revoked token, or a removed member means `current_member_id()` is empty, and every rule says no.
 
-Sign out, a removed member and a rotated code with "sign everyone out" all revoke sessions instantly.
+Sign out, a removed member, Reset sign-in and a rotated code with "sign everyone out" all revoke sessions instantly.
 
 ## Setup
 
@@ -192,9 +198,11 @@ For a change:
 
 `0005_contacts_admin.sql`: the update rule on `member_contacts` now also checks the new row, so a member can't move their contact row to another member's id. Everything else the profile setup and admin screens need was already allowed: members read and write their own contact row, admins read and write anyone's in their group, members update their own reminder toggles and profile.
 
-`0007_login_verification.sql`: sign-in codes. Adds `login_codes` (service role only, no policies), `member_id` and `kind` columns on `join_attempts` for per-member and per-IP limits, `login_contact()` (a member's email/phone and whether anyone in the group has one) and `verify_login_code()` (both service role only), the 180-day limit in `current_member_id()`, and an hourly cron job `mm-login-codes-cleanup` that deletes expired codes (and sessions unused for 270 days). `schema.sql` and `cron.sql` have the same changes for fresh setups.
+`0007_login_verification.sql`: sign-in codes. Adds `login_codes` (service role only, no policies), `member_id` and `kind` columns on `join_attempts` for per-member and per-IP limits, `login_contact()` (a member's email/phone) and `verify_login_code()` (both service role only), the 180-day limit in `current_member_id()`, and an hourly cron job `mm-login-codes-cleanup` that deletes expired codes (and sessions unused for 270 days). `schema.sql` and `cron.sql` have the same changes for fresh setups.
 
 `0008_meeting_notes.sql`: meeting notes. Adds `meeting_notes` (one `manual` and one `zoom` note per meeting; `raw` keeps the Zoom payload and isn't readable by the app; unattached Zoom notes are admins-only), `group_settings.zoom_meeting_id` (filled by `set_group_location()` from `/j/<digits>` in the Zoom link, and backfilled from a saved link), `ingest_zoom_summary()` (service role only: matches a summary to the group and to the meeting starting within 6 hours, upserts the note, assigns next steps that start with a member's name), and triggers that queue `notes_ready` (group) and `notes_unmatched` (admins). Admins write manual notes and edit any note's summary, points, steps and meeting; a Zoom note keeps its title. `schema.sql` and `policies.sql` end with the same statements.
+
+`0009_self_enroll.sql`: first sign-in on trust, replacing 0007's code-free "bootstrap" join. Adds `members.enrolled_at` / `enrolled_by` (`self` | `admin`; backfilled as `admin` for contacts already on file, kept in step by a trigger on `member_contacts`), `login_codes.pending_email` / `pending_phone`, `complete_self_enrollment()` (service role only; called by `verify_login_code()`, which now also saves a first sign-in's contact and queues the `self_enrolled` notice), `mask_email()` / `mask_phone()`, and `admin_reset_member_signin()` (the app may call it; it checks admin and group itself). `login_contact()` no longer reports whether anyone in the group has a contact. Deploy the `join` function together with it. `schema.sql` and `policies.sql` end with the same statements.
 
 The `zoom-webhook` function (deployed with `--no-verify-jwt`; Zoom's signature is the check) needs `ZOOM_WEBHOOK_SECRET_TOKEN`, and `ZOOM_ACCOUNT_ID` / `ZOOM_CLIENT_ID` / `ZOOM_CLIENT_SECRET` when a webhook arrives without the summary in it. The deploy workflow sets all four from GitHub secrets (empty is fine until Zoom is set up). Steps for Corey: `ZOOM.md`.
 
@@ -237,7 +245,7 @@ await MASTERMIND_API.verifyCode('m3', '123456')   // the code from the email (or
 await MASTERMIND_API.getSession()                 // { memberId: 'm3', ... }
 (await MASTERMIND_API.getGetTogethers()).length   // Jake hosts the closed one, so 4
 ```
-On a brand-new group with no contacts, `requestCode` answers `{ bootstrap: true }`; then `await MASTERMIND_API.join('m3')`.
+A member with no email or phone gets `{ enroll: true }`; then `await MASTERMIND_API.requestCode('m3', null, { email: 'you@example.com' })` and `verifyCode` as above (the answer has `enrolled: true`).
 If `getSession()` returns null right after `verifyCode`, the `x-session-token` header isn't reaching the database. Check that the project URL is right and that the request in the Network tab carries the header.
 
 Preview the next reminders without sending (PowerShell; use `curl.exe`, not the `curl` alias):

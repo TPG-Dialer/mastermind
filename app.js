@@ -1243,7 +1243,7 @@
       if (busy) return;
       const id = b.dataset.member;
       if (SUPA) {
-        // Asks the server for a sign-in code (or, for the very first sign-in of a new group, lets them in).
+        // Asks the server for a sign-in code (or, with nothing on file yet, for the member's own email).
         busy = true;
         $$('[data-member]').forEach((x) => { x.disabled = true; });
         b.setAttribute('aria-busy', 'true');
@@ -1255,17 +1255,13 @@
         let res;
         try {
           res = await baseApi.requestCode(id);
-          if (res.bootstrap) {
-            await baseApi.join(id);
-            store.set(bootstrapKey(id), true);
-          }
         } catch (err) {
           unbusy();
           return loginError(id, err);
         }
+        if (res.enroll) return renderEnroll(id);
         if (res.choose) return renderCodeChannel(id, res.options);
-        if (!res.bootstrap) return renderCode(id, res);
-        return finishSignIn(id);
+        return renderCode(id, res);
       }
       finishSignIn(id);
     }));
@@ -1274,9 +1270,8 @@
   // The roster entry for the name that was tapped (the roster from the invite step).
   const loginMember = (id) => (state.members || []).find((m) => m.id === id) || { id, name: '' };
   const loginFirst = (m) => String(m.name || '').split(' ')[0];
-  const bootstrapKey = (id) => `bootstrapSetup:${id}`;
 
-  // Supabase: the session exists now (code verified, or the first-admin join). Load the group as that member.
+  // Supabase: the session exists now (code verified). Load the group as that member.
   async function finishSignIn(id) {
     stopCodeTimer();
     if (SUPA) {
@@ -1301,6 +1296,8 @@
     if (e.code === 'no_contact' || e.code === 'no_channel' || e.code === 'too_many_codes' || e.code === 'send_failed' || e.code === 'not_on_roster') {
       return renderLoginNote(id, e.message, e.detail);
     }
+    // Someone else's first sign-in for this name got there first, or an admin added a contact.
+    if (e.code === 'contact_exists') { toast('Tap your name again to get your code.', 4000); return renderWho(); }
     if (e.code === 'network' || e.status === 0) return toast(friendlyError(e), 4000);
     toast(e.message || friendlyError(e), 4000);
   }
@@ -1323,6 +1320,77 @@
         ${gateMotif('bottom')}
       </div>`, undefined, { gate: true });
     $('#note-back').addEventListener('click', () => renderWho());
+  }
+
+  // First sign-in: nothing on file for this name, so the member adds their own email (and
+  // optionally a mobile). The server saves it only when the code is right; after that it's
+  // the only place codes go, and this screen never shows for them again.
+  function renderEnroll(id, prefill, error) {
+    stopCodeTimer();
+    showChrome(false);
+    const m = loginMember(id);
+    const p = prefill || {};
+    setView(`
+      <div class="gate gate-who gate-code gate-enroll">
+        ${gateMotif('top')}
+        <div class="gate-inner">
+          ${gateLogo(state.config, true)}
+          <h1 class="gate-word">First time here?</h1>
+          <p class="gate-lede">Add your email so we can send you a sign-in code. After this, it's the only way to sign in as <b>${esc(m.name || 'you')}</b>.</p>
+          <form id="enroll-form" class="gate-form" novalidate>
+            <label for="en-email" class="gate-label">Email</label>
+            <input id="en-email" class="gate-input gate-text" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" maxlength="120" placeholder="you@example.com" required aria-describedby="en-err" value="${esc(p.email || '')}">
+            <label for="en-phone" class="gate-label">Mobile <span class="gate-opt">optional</span></label>
+            <input id="en-phone" class="gate-input gate-text" type="tel" inputmode="tel" autocomplete="tel" maxlength="24" placeholder="(512) 555-0123" value="${esc(prettyPhone(p.phone))}" aria-describedby="en-phone-help en-err">
+            <p class="gate-help" id="en-phone-help">For reminders by text. Only you and the group's admins see these.</p>
+            <p class="gate-error" id="en-err" role="alert"${error ? '' : ' hidden'}>${esc(error || '')}</p>
+            <button class="btn btn-gold btn-block" type="submit" id="en-send">Send my code</button>
+          </form>
+          <div class="gate-actions"><button class="gate-link" id="code-not-me" type="button">Not ${esc(loginFirst(m))}? Pick another name</button></div>
+        </div>
+        ${gateMotif('bottom')}
+      </div>`, undefined, { gate: true });
+    const emailEl = $('#en-email');
+    const phoneEl = $('#en-phone');
+    const errEl = $('#en-err');
+    const btn = $('#en-send');
+    const showErr = (msg, el) => {
+      errEl.textContent = msg || ''; errEl.hidden = !msg;
+      [emailEl, phoneEl].forEach((x) => { if (msg && x === el) x.setAttribute('aria-invalid', 'true'); else x.removeAttribute('aria-invalid'); });
+      if (msg && el) el.focus();
+    };
+    if (error) emailEl.setAttribute('aria-invalid', 'true');
+    emailEl.focus();
+    $('#code-not-me').addEventListener('click', () => renderWho());
+    let busy = false;
+    $('#enroll-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (busy) return;
+      const email = emailEl.value.trim();
+      if (!email) return showErr('Add your email to get a code.', emailEl);
+      if (!EMAIL_RE.test(email)) return showErr('Check the email address.', emailEl);
+      const phone = toE164(phoneEl.value);
+      if (phone === null) return showErr('Enter a 10-digit US mobile number, or leave it blank.', phoneEl);
+      showErr('');
+      const self = { email, phone: phone || null };
+      busy = true;
+      btn.disabled = true;
+      btn.setAttribute('aria-busy', 'true');
+      try {
+        const res = await baseApi.requestCode(id, null, self);
+        return renderCode(id, res, null, self);
+      } catch (err) {
+        busy = false;
+        btn.disabled = false;
+        btn.removeAttribute('aria-busy');
+        const x = err || {};
+        if (x.code === 'bad_email') return showErr(x.message, emailEl);
+        if (x.code === 'bad_phone') return showErr(x.message, phoneEl);
+        if (x.code === 'resend_wait') return showErr(x.message, null);
+        if (x.code === 'network' || x.status === 0) return showErr(friendlyError(x), null);
+        loginError(id, x);
+      }
+    });
   }
 
   const ICON_MAIL = '<svg class="code-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3.5 7l8.5 6 8.5-6"/></svg>';
@@ -1376,7 +1444,8 @@
 
   // "Check your email": the 6-digit code, resend after 30 s, switch channel, or back to the names.
   // info: the requestCode() answer ({ channel, maskedTo, resendAfter, options, devCode? }).
-  function renderCode(id, info, error) {
+  // self: on a first sign-in, the { email, phone } the member typed (sent again on resend/switch).
+  function renderCode(id, info, error, self) {
     stopCodeTimer();
     showChrome(false);
     const m = loginMember(id);
@@ -1399,6 +1468,7 @@
           <div class="gate-actions">
             <button class="gate-link" id="code-resend" type="button">Resend code</button>
             ${other ? `<button class="gate-link" id="code-switch" type="button">${other.channel === 'sms' ? 'Use text instead' : 'Use email instead'}</button>` : ''}
+            ${self ? '<button class="gate-link" id="code-edit" type="button">Use a different email</button>' : ''}
             <button class="gate-link" id="code-not-me" type="button">Not ${esc(loginFirst(m))}? Pick another name</button>
           </div>
         </div>
@@ -1446,7 +1516,7 @@
       } catch (err) {
         setBusy(false);
         const e = err || {};
-        if (e.code === 'bad_invite' || (e.status === 401 && !e.code)) return loginError(id, e);
+        if (e.code === 'bad_invite' || (e.status === 401 && !e.code) || e.code === 'contact_exists') return loginError(id, e);
         if (e.code === 'network' || e.status === 0) { showErr(friendlyError(e)); return; }
         input.value = '';
         input.focus();
@@ -1466,8 +1536,8 @@
       if (busy) return;
       setBusy(true);
       try {
-        const res = await baseApi.requestCode(id, channel);
-        renderCode(id, res);
+        const res = await baseApi.requestCode(id, channel, self);
+        renderCode(id, res, null, self);
         toast(note);
       } catch (err) {
         setBusy(false);
@@ -1479,6 +1549,7 @@
     }
     resend.addEventListener('click', () => send(info.channel, sms ? 'New code sent by text' : 'New code sent'));
     if (other) $('#code-switch').addEventListener('click', () => send(other.channel, other.channel === 'sms' ? 'Code sent by text' : 'Code sent by email'));
+    if (self) $('#code-edit').addEventListener('click', () => renderEnroll(id, self));
     $('#code-not-me').addEventListener('click', () => { stopCodeTimer(); renderWho(); });
   }
 
@@ -3391,12 +3462,13 @@
       const miss = missingContact(contactOf(m.id));
       return miss ? `<span class="miss-tag">No ${esc(miss.replace(' and ', ' or '))}</span>` : '';
     };
+    const enrolledTag = (m) => (admin && m.enrolledAt ? `<span class="row-sub enrolled-line">${esc(enrolledText(m))}</span>` : '');
     setView(`${pageHead('Members', `${plural(state.members.length, 'person', 'people')}. Tap anyone to see what they can help with.`, { backHtml: back('#/group', 'Group') })}
       ${teamMap()}
       <h2 class="sec">Everyone<span class="sec-count">${state.members.length}</span></h2>
       <div class="rows">${state.members.map((m) => `<a class="row member-row ${isMe(m.id) ? 'mine' : ''}" href="#/group/members/${esc(m.id)}">${avatar(m.id)}
         <span class="row-main"><span class="row-title">${esc(m.name)}${isMe(m.id) ? ' (you)' : ''}${wgChips(m)}</span>
-          ${m.bio ? `<span class="row-sub clamp1">${esc(m.bio)}</span>` : ''}${missTag(m)}</span>
+          ${m.bio ? `<span class="row-sub clamp1">${esc(m.bio)}</span>` : ''}${enrolledTag(m)}${missTag(m)}</span>
         ${m.role === 'admin' ? '<span class="role-tag">Admin</span>' : ''}${chev}</a>`).join('')}</div>
       ${admin ? `<h2 class="sec">Admin</h2>
       <div class="rows">
@@ -3442,12 +3514,23 @@
           <span class="row-title">${c.email ? esc(c.email) : '<span class="miss-tag">No email</span>'}</span>
           <span class="row-sub">${c.phone ? esc(prettyPhone(c.phone)) : '<span class="miss-tag">No phone</span>'}</span></span>${chev}</button>
       </div>
+      <h2 class="sec">Sign-in<span class="sec-count">Admins only</span></h2>
+      <div class="rows">
+        <div class="row static"><span class="row-main">
+          <span class="row-title">${m.enrolledAt ? esc(enrolledText(m)) : 'Not signed up yet'}</span>
+          <span class="row-sub">${m.enrolledAt ? 'Sign-in codes go to the email or phone above.'
+            : `${esc(m.name.split(' ')[0])} adds an email the first time they sign in.`}</span></span></div>
+        ${mine ? '' : `<button class="row" id="reset-signin"><span class="row-main"><span class="row-title">Reset sign-in</span>
+          <span class="row-sub">Clears their email and phone and signs them out everywhere</span></span>${chev}</button>`}
+      </div>
       ${mine ? '' : `<button class="btn btn-danger btn-block" id="remove-member">Remove ${esc(m.name.split(' ')[0])} from the group</button>`}`;
       })() : ''}`, 'group');
     const ac = $('#admin-contact');
     if (ac) ac.addEventListener('click', () => adminEditContact(m));
     const rm = $('#remove-member');
     if (rm) rm.addEventListener('click', () => removeMemberSheet(m));
+    const rs = $('#reset-signin');
+    if (rs) rs.addEventListener('click', () => resetSigninSheet(m));
   }
 
   function editAbout() {
@@ -3727,26 +3810,26 @@
     }
   }
 
+  // Sign-in codes go to your email or phone, so you can change them but not clear both
+  // (with neither on file, anyone with the invite code could sign in as you).
+  const KEEP_CONTACT = 'Keep an email or phone: sign-in codes go there';
+  const hadSignInContact = () => SUPA && !!(state.myContact && (state.myContact.email || state.myContact.phone));
+
   // First run, after the rules: shown once until saved or skipped (Profile has the same fields).
   function renderProfileSetup() {
     showChrome(false);
     const cfg = state.config;
-    // First sign-in of a new group (no code, nobody had a contact yet): an email or phone is
-    // required here, so the next sign-in, theirs or anyone's, can use a code.
-    const first = !!store.get(bootstrapKey(state.me.id), false);
     setView(`
       <div class="onboard onboard-tight">
         ${cfg.logoSvg ? `<div class="logo-big logo-big-svg">${shorelineLogoSVG(96, 'var(--primary)')}</div>` : `<div class="logo-big" aria-hidden="true">${esc(cfg.logoText)}</div>`}
         <h1>Set up your profile</h1>
-        <p class="lede">${first
-          ? `You're the first one in. Add your email or phone: sign-in codes and meeting reminders go there. Only you and ${esc(cfg.name)}'s admins see them.`
-          : `So meeting reminders reach you. Only you and ${esc(cfg.name)}'s admins see your email and phone.`}</p>
+        <p class="lede">So meeting reminders reach you. Only you and ${esc(cfg.name)}'s admins see your email and phone.</p>
       </div>
       <form id="setup-form" class="setup-form" novalidate>
         ${contactFieldsHTML({ withBio: true })}
         <button class="btn btn-primary btn-block" type="submit" id="setup-save">Save and continue</button>
       </form>
-      ${first ? '' : '<button class="link-btn" id="setup-skip">Skip for now</button>'}`);
+      <button class="link-btn" id="setup-skip">Skip for now</button>`);
     window.scrollTo(0, 0);
     const form = $('#setup-form');
     bindContactFields(form);
@@ -3761,14 +3844,13 @@
       if (busy) return;
       const v = readContactFields(form);
       if (v.error) { toast(v.error); return; }
-      if (first && !v.email && !v.phone) { $('#ct-email').focus(); toast('Add your email or phone to continue'); return; }
+      if (!v.email && !v.phone && hadSignInContact()) { $('#ct-email').focus(); toast(KEEP_CONTACT); return; }
       busy = true;
       $('#setup-save').disabled = true;
       try { await saveMyContact(v); } catch (err) { busy = false; $('#setup-save').disabled = false; return; }
-      store.remove(bootstrapKey(state.me.id));
       done('saved', 'Profile saved');
     });
-    if (!first) $('#setup-skip').addEventListener('click', () => done('skipped', 'You can add these any time in Profile'));
+    $('#setup-skip').addEventListener('click', () => done('skipped', 'You can add these any time in Profile'));
   }
 
   // Profile > Email, phone and reminders.
@@ -3784,6 +3866,7 @@
         if (busy) return;
         const v = readContactFields(sheet);
         if (v.error) { toast(v.error); return; }
+        if (!v.email && !v.phone && hadSignInContact()) { sheet.querySelector('#ct-email').focus(); toast(KEEP_CONTACT); return; }
         busy = true;
         try { await saveMyContact(v); } catch (err) { busy = false; return; }
         store.set(setupKey(), 'saved');
@@ -3865,6 +3948,29 @@
         await loadContact();
         closeSheet();
         toast(`Added ${name.split(' ')[0]}`);
+        rerender();
+      });
+    });
+  }
+
+  // "Enrolled Oct 31, 2026 (self)": when the sign-in contact was first put on file, and by whom.
+  const enrolledText = (m) => `Enrolled ${fmtDateYear.format(new Date(m.enrolledAt))} (${m.enrolledBy === 'self' ? 'self' : 'admin'})`;
+
+  function resetSigninSheet(m) {
+    const first = m.name.split(' ')[0];
+    openSheet(`
+      <h2>Reset ${esc(first)}'s sign-in?</h2>
+      <p class="sheet-sub">${esc(first)}'s email and phone are removed and ${esc(first)} is signed out on every device. The next time someone picks ${esc(first)}'s name, they add an email and get a code there, and you get a notice. Use this when someone else signed in as ${esc(first)}, or ${esc(first)} lost access to that email.</p>
+      <div class="sheet-actions"><button class="btn btn-ghost" data-cancel>Cancel</button><button class="btn btn-danger" id="rs-go">Reset sign-in</button></div>`, (sheet) => {
+      let busy = false;
+      sheet.querySelector('#rs-go').addEventListener('click', async () => {
+        if (busy) return;
+        busy = true;
+        try { await api.adminResetSignin(m.id); } catch (e) { busy = false; return; }
+        state.contacts = (state.contacts || []).filter((x) => x.memberId !== m.id);
+        await refresh();
+        closeSheet();
+        toast(`${first}'s sign-in was reset`);
         rerender();
       });
     });
@@ -4005,8 +4111,7 @@
     }
     if (!rulesAccepted()) return renderRulesGate();
     // First run with Supabase: ask for email and phone once (saved or skipped).
-    if (SUPA && state.myContact && !contactComplete()
-      && (!store.get(setupKey(), null) || (store.get(bootstrapKey(state.me.id), false) && !state.myContact.email && !state.myContact.phone))) return renderProfileSetup();
+    if (SUPA && state.myContact && !contactComplete() && !store.get(setupKey(), null)) return renderProfileSetup();
     showChrome(true);
     const y = window.scrollY;
     if (keepScroll !== true) {

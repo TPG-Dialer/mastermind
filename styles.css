@@ -2063,6 +2063,16 @@ a.idea-title { color: var(--primary-ink); text-decoration: none; }
 }
 .gate-dev b { letter-spacing: .14em; font-variant-numeric: tabular-nums; }
 .gate-detail { margin: -8px 0 20px; font-size: 13px; opacity: .78; }
+/* "First time here?": email + mobile on the gate background. */
+.gate-enroll .gate-form { gap: 6px; text-align: left; }
+.gate .gate-label { margin-top: 6px; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.gate .gate-label:first-child { margin-top: 0; }
+.gate .gate-opt { margin-left: 4px; font-weight: 400; letter-spacing: .02em; text-transform: none; opacity: .75; }
+.gate .gate-text { text-align: left; font-size: 17px; font-weight: 400; letter-spacing: .01em; text-transform: none; }
+.gate .gate-text::placeholder { font-size: 16px; letter-spacing: .01em; text-transform: none; }
+.gate .gate-help { margin: 0 0 6px; font-size: 13px; opacity: .78; }
+.gate-enroll .btn-block { margin-top: 8px; }
+.enrolled-line { font-size: 12.5px; }
 .gate-code .rows { margin-bottom: 4px; }
 .gate-code .row .row-main { display: flex; flex-direction: column; gap: 2px; }
 .code-ic { width: 26px; height: 26px; flex: none; fill: none; stroke: var(--primary); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }

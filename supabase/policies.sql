@@ -498,3 +498,31 @@ create policy mm_notes_update on public.meeting_notes for update to anon
 drop policy if exists mm_notes_delete on public.meeting_notes;
 create policy mm_notes_delete on public.meeting_notes for delete to anon
   using (group_id = (select public.current_group_id()) and (select public.is_admin()));
+
+-- ---------------------------------------------------------------------
+-- Added by migrations_extra/0009_self_enroll.sql (kept here so a fresh
+-- setup from this file gets the same rules). The app may call
+-- admin_reset_member_signin() (it checks is_admin() and the group itself);
+-- the self-enrollment helpers are service role only. members.enrolled_at /
+-- enrolled_by are readable with the roster (table-level select) and not
+-- writable by the app (members has column-level update grants).
+-- ---------------------------------------------------------------------
+-- 8. Privileges ----------------------------------------------------------------------------
+revoke all on function public.login_contact(text, text) from public, anon, authenticated;
+revoke all on function public.verify_login_code(text, text, text) from public, anon, authenticated;
+revoke all on function public.complete_self_enrollment(text, text, text, text) from public, anon, authenticated;
+revoke all on function public.tg_member_contacts_enrolled() from public, anon, authenticated;
+revoke all on function public.mask_email(text) from public, anon, authenticated;
+revoke all on function public.mask_phone(text) from public, anon, authenticated;
+revoke all on function public.admin_reset_member_signin(text) from public, anon, authenticated;
+grant execute on function public.admin_reset_member_signin(text) to anon;
+do $$ begin
+  if exists (select 1 from pg_roles where rolname = 'service_role') then
+    grant execute on function public.login_contact(text, text) to service_role;
+    grant execute on function public.verify_login_code(text, text, text) to service_role;
+    grant execute on function public.complete_self_enrollment(text, text, text, text) to service_role;
+    grant execute on function public.mask_email(text) to service_role;
+    grant execute on function public.mask_phone(text) to service_role;
+    grant execute on function public.admin_reset_member_signin(text) to service_role;
+  end if;
+end $$;
