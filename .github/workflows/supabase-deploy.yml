@@ -91,7 +91,6 @@ jobs:
         run: |
           supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" \
             CRON_SECRET="$CRON_SECRET" \
-            DRY_RUN=true \
             RESEND_API_KEY="$(printf '%s' "$RESEND_API_KEY" | tr -d '[:space:]')" \
             ZOOM_WEBHOOK_SECRET_TOKEN="$(printf '%s' "$ZOOM_WEBHOOK_SECRET_TOKEN" | tr -d '[:space:]')" \
             ZOOM_ACCOUNT_ID="$(printf '%s' "$ZOOM_ACCOUNT_ID" | tr -d '[:space:]')" \
@@ -123,3 +122,6 @@ jobs:
 
       - name: Turn off test mode (codes only by email/SMS)
         run: supabase secrets unset --project-ref "$SUPABASE_PROJECT_REF" DEV_SHOW_CODES || true
+
+      - name: Turn on real sending (email live; SMS/push send only when their secrets exist)
+        run: supabase secrets unset --project-ref "$SUPABASE_PROJECT_REF" DRY_RUN || true

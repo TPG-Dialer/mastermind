@@ -121,6 +121,7 @@ Deno.serve(async (req) => {
         if (!to) { results.push({ id: r.id, status: "skipped", error: "no email" }); return; }
         res = await sendEmail({
           to, subject: r.subject || gname, text: `${r.body}\n\n${link}`,
+          from: `${gname.replace(/["<>\r\n]/g, "").trim() || "Mastermind"} <reminders@${Deno.env.get("EMAIL_FROM_DOMAIN") || "tpgmn.com"}>`,
           html: emailHtml(gname, r.subject || gname, r.body, link), idempotencyKey: r.dedupe_key,
         });
       } else if (r.channel === "sms") {
