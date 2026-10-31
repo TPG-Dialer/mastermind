@@ -32,7 +32,7 @@ Same codes in both modes: Supabase was seeded with them (`supabase/seed.sql`), a
 
 The first time each person opens the app on a device, they agree to the group's ground rules (from `rules` in the config; with Supabase, from the database, and the agreement is saved there per rules version).
 
-With Supabase, the invite code is checked by the server (`join` function), tapping your name creates a session for this device, and Switch user signs out (the code is needed again). Then, if your email or phone is missing, "Set up your profile" asks for email, mobile phone (saved as +1 E.164), "Text me reminders" (on when a phone is given), "Email me reminders" (on) and an optional "What do you do". "Skip for now" is fine; Home then shows "Add your email and phone" under the to-do list until both are in. The seeded members have no contact details, so everyone sees this screen once.
+With Supabase, the invite code is checked by the server (`join` function). Tapping your name sends a 6-digit sign-in code to your email (or your phone, once texting is set up), and only the right code creates a session for this device (see "Sign-in codes" below). Switch user signs out (the invite code and a new sign-in code are needed again). Then, if your email or phone is missing, "Set up your profile" asks for email, mobile phone (saved as +1 E.164), "Text me reminders" (on when a phone is given), "Email me reminders" (on) and an optional "What do you do". "Skip for now" is fine; Home then shows "Add your email and phone" under the to-do list until both are in. The seeded members have no contact details, so everyone sees this screen once.
 
 Pick the admin to edit agendas, meetings, the hot seat rotation and anyone's commitments or goals, see the meeting headcount, pin announcements and set the group book. Tap the avatar (top right) > Switch user to try a regular member. Daniel Ruiz (family) and Luis Ortega (Flight Club) had the last hot seat.
 
@@ -89,7 +89,7 @@ Each group has its own saved login and data on the device.
 - `config/<group>.json` – name, subtitle, tagline, `verse` (short, full, ref), `dedication` (family), `nextLabel` (hero eyebrow), `enterLabel` (invite button), colors (primary, accent, background, text, surface, muted, rule, secondary, good, goodBg), logo (`logoMask` for Flight Club, `logoSvg` for The Shoreline, `logoText` fallback), meeting length, `location` (usual meeting place without the Zoom link, see Meeting location), `sheetId` (unused), `rules` (list of short ground rules). Public on GitHub Pages: no invite codes or private links in here.
 - `data/<group>.json` – sample data, shaped like the future Google Sheet tabs (see below).
 - `manifest.webmanifest` (The Shoreline), `manifest-entrepreneur.webmanifest` (Flight Club) – home-screen install info per group.
-- `sw.js` – offline cache (app files only; Supabase calls are never cached by it), plus web push: shows `{ title, body, url }` from `send-notifications` and opens `url` when tapped. Bump `VERSION` in it when files change (now `mm-v10`).
+- `sw.js` – offline cache (app files only; Supabase calls are never cached by it), plus web push: shows `{ title, body, url }` from `send-notifications` and opens `url` when tapped. Bump `VERSION` in it when files change (now `mm-v14`).
 
 ## Maker credit
 
@@ -195,7 +195,7 @@ All data access goes through `api` in `app.js`. Each method returns a Promise. `
 
 `getConfig, getMembers, updateMember, getMeetings, updateMeeting (patch `location: null` clears a meeting's own location), getGroupLocation, setGroupLocation, setMeetingRsvp, swapHotSeat, saveHotSeatPrep, saveActionPlan, getCommitments, updateCommitment, createCommitment, getGoals, saveGoal, getCheckins, saveCheckin, getAsks, createAsk, replyToAsk, updateAsk, setAskNeeds, getAnnouncements, createAnnouncement, updateAnnouncement, commentOnAnnouncement, getIdeas, createIdea, toggleIdeaLike, commentOnIdea, getBooks, createBook, setGroupBook, commentOnBook, getReadingList, setReadingStatus, getGetTogethers, saveGetTogether, rsvpGetTogether, cancelGetTogether, resetDemo`
 
-Supabase adds: `verifyInvite, join, signOut, getSession, isSignedIn, acceptRules, getMyContact, updateMyContact, getNotificationPrefs, updateNotificationPrefs, updateMyProfile, getContacts, adminSaveContact, addMember, removeMember, restoreMember, adminUpdateMember, rotateInviteCode`, trainings, attendance and push. The screens check `api.backend === 'supabase'` before using them.
+Supabase adds: `verifyInvite, requestCode, verifyCode, join (first-admin setup only), signOut, getSession, isSignedIn, acceptRules, getMyContact, updateMyContact, getNotificationPrefs, updateNotificationPrefs, updateMyProfile, getContacts, adminSaveContact, addMember, removeMember, restoreMember, adminUpdateMember, rotateInviteCode`, trainings, attendance and push. The screens check `api.backend === 'supabase'` before using them.
 
 Privacy: in demo mode `getGetTogethers` returns everything and the screens hide invite-only events. With Supabase the server filters them (row-level security).
 
@@ -213,6 +213,21 @@ How the app behaves with it:
 - **Quick actions** (RSVP, status, likes, comments, check-ins) update the screen at once; if the server refuses, the screen goes back and a toast says "Couldn't save: ...".
 - **Offline:** the last good copy is kept on the device (never contact details). Opening the app offline shows it, and Profile says "Offline, showing cached". With nothing cached, you get "Couldn't reach ..." and Try again, not a blank screen.
 - **Signed out elsewhere** (removed, or code rotated with "sign everyone out"): back to the invite screen.
+
+### Sign-in codes
+
+Picking your name on a device with no session for you sends a one-time code:
+
+1. Invite code, then "Who are you?" as before.
+2. Tap your name. The server sends a 6-digit code to your email, or by text when RingCentral is set up. If you have both, you pick: "Email c•••y@gmail.com" or "Text (•••) •••-0119".
+3. "Check your email" / "Check your phone": type or paste the code (the field takes iPhone/Android one-time-code autofill and submits at 6 digits). Wrong codes show inline ("That code isn't right. 4 tries left."). "Resend code" unlocks after 30 seconds. "Use text instead" / "Use email instead" when both exist. "Not Corey? Pick another name" goes back.
+4. Right code: the ground rules, then profile setup, as before. The device stays signed in; a session lapses after 180 days without opening the app.
+
+Rules (enforced by the `join` function): codes are 6 digits, last 10 minutes, allow 5 wrong tries, one live code per member (a new one replaces the old), only a salted hash is stored. Limits: 5 codes per member and 15 per IP an hour, 15 wrong codes per IP per 15 minutes.
+
+- **No email or phone on file:** "Ask your admin to add your email or phone first", with Pick another name. Admins add contacts in Group > Members.
+- **Brand-new group (nobody has an email or phone yet):** the first person in signs in without a code (logged in `join_attempts` as `bootstrap`), and profile setup then requires an email or phone (no Skip). From then on everyone needs a code.
+- **Email not set up yet:** with the `DEV_SHOW_CODES=true` secret (set by the deploy workflow for now) the code screen shows "Test mode, nothing was sent. Your code is 123456". Without it: "We couldn't send the code; ask your admin." plus the reason. **Remove `DEV_SHOW_CODES` at launch** (see `supabase/README.md`).
 
 Database changes after the first deploy go in `supabase/migrations_extra/NNNN_name.sql` (the deploy workflow copies them after the original four). `0005_contacts_admin.sql` tightens one rule: a member can't move their contact row to someone else's id.
 

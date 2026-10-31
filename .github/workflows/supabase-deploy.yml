@@ -17,6 +17,7 @@ env:
   SUPABASE_PROJECT_REF: reqfsulfmmrzkzsqthvv
   SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
   SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+  RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
   APP_URL: https://shoreline.tpgmn.com/
   ALLOWED_ORIGINS: https://shoreline.tpgmn.com,https://flightclub.tpgmn.com,http://shoreline.tpgmn.com,http://flightclub.tpgmn.com,https://tpg-dialer.github.io,http://localhost:8000,http://localhost:8765
 
@@ -79,10 +80,17 @@ jobs:
           done
 
       - name: Set function secrets (dry-run until channels are configured)
+        # DEV_SHOW_CODES=true: while email isn't set up (no RESEND_API_KEY), the
+        # sign-in code is shown in the app instead of being sent. REMOVE IT AT
+        # LAUNCH (delete the line, then: supabase secrets unset DEV_SHOW_CODES).
         run: |
           supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" \
             CRON_SECRET="$CRON_SECRET" \
             DRY_RUN=true \
+            RESEND_API_KEY="$(printf '%s' "$RESEND_API_KEY" | tr -d '[:space:]')" \
+            EMAIL_FROM_DOMAIN=tpgmn.com \
+            "EMAIL_FROM=Mastermind <reminders@tpgmn.com>" \
+            DEV_SHOW_CODES=true \
             APP_URL="$APP_URL" \
             APP_URL_FAMILY="https://shoreline.tpgmn.com/" \
             APP_URL_ENTREPRENEUR="https://flightclub.tpgmn.com/" \

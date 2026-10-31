@@ -4,27 +4,32 @@
 // instead, so the pipeline can be tested before any account exists.
 import webpush from "npm:web-push@3.6.7";
 
-export interface SendResult { ok: boolean; id?: string; error?: string; gone?: boolean; retry?: boolean }
+export interface SendResult { ok: boolean; id?: string; error?: string; gone?: boolean; retry?: boolean; dry?: boolean }
+
+/** Options for one send. ignoreDryRun: send whenever credentials exist, even with DRY_RUN=true
+ *  (sign-in codes: a code that is never delivered locks the member out). */
+export interface SendOpts { ignoreDryRun?: boolean }
 
 const env = (k: string) => Deno.env.get(k) ?? "";
-const dryRun = () => env("DRY_RUN") === "true";
+const dryRun = (o?: SendOpts) => !o?.ignoreDryRun && env("DRY_RUN") === "true";
 
 function dry(channel: string, to: string, text: string): SendResult {
   console.log(`[dry-run ${channel}] to=${to} :: ${text.slice(0, 160)}`);
-  return { ok: true, id: `dry-run-${channel}` };
+  return { ok: true, id: `dry-run-${channel}`, dry: true };
 }
 
 // ---------------------------------------------------------------------
 // Email: Resend  (https://resend.com/docs/api-reference/emails/send-email)
-// Secrets: RESEND_API_KEY, EMAIL_FROM (e.g. "Flight Club <reminders@yourdomain.com>")
+// Secrets: RESEND_API_KEY, EMAIL_FROM (e.g. "Flight Club <reminders@yourdomain.com>").
+// msg.from, when given, wins over EMAIL_FROM (sign-in codes use one per group).
 // TODO(Corey): create a Resend account, verify the sending domain, set both secrets.
 // ---------------------------------------------------------------------
 export async function sendEmail(msg: {
-  to: string; subject: string; text: string; html?: string; idempotencyKey?: string; replyTo?: string;
-}): Promise<SendResult> {
+  to: string; subject: string; text: string; html?: string; idempotencyKey?: string; replyTo?: string; from?: string;
+}, opts?: SendOpts): Promise<SendResult> {
   const key = env("RESEND_API_KEY");
-  const from = env("EMAIL_FROM");
-  if (dryRun() || !key || !from) return dry("email", msg.to, `${msg.subject} | ${msg.text}`);
+  const from = msg.from || env("EMAIL_FROM");
+  if (dryRun(opts) || !key || !from) return dry("email", msg.to, `${msg.subject} | ${msg.text}`);
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -72,10 +77,12 @@ async function ringCentralToken(): Promise<string> {
   return rcToken.value;
 }
 
-export async function sendSms(msg: { to: string; text: string }): Promise<SendResult> {
-  const ready = env("RINGCENTRAL_CLIENT_ID") && env("RINGCENTRAL_CLIENT_SECRET") && env("RINGCENTRAL_JWT") &&
-    env("RINGCENTRAL_FROM_NUMBER");
-  if (dryRun() || !ready) return dry("sms", msg.to, msg.text);
+/** True when all four RingCentral secrets are set (the join function offers texting only then). */
+export const smsConfigured = () => !!(env("RINGCENTRAL_CLIENT_ID") && env("RINGCENTRAL_CLIENT_SECRET") &&
+  env("RINGCENTRAL_JWT") && env("RINGCENTRAL_FROM_NUMBER"));
+
+export async function sendSms(msg: { to: string; text: string }, opts?: SendOpts): Promise<SendResult> {
+  if (dryRun(opts) || !smsConfigured()) return dry("sms", msg.to, msg.text);
   try {
     const server = env("RINGCENTRAL_SERVER_URL") || "https://platform.ringcentral.com";
     const token = await ringCentralToken();

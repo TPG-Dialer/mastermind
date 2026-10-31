@@ -10,7 +10,8 @@
 
    How it talks to Supabase
    - Tables and RPCs through PostgREST (fetch, no library needed).
-   - Login through the `join` Edge Function, which returns a session token.
+   - Login through the `join` Edge Function: invite code -> roster -> a 6-digit
+     code by email or text (requestCode / verifyCode) -> a session token.
      The token is kept in localStorage (mm:<group>:session) and sent as the
      x-session-token header; row-level security uses it to know who you are.
    - Everything read is cached in memory. Writes update the cache, so the app's
@@ -106,7 +107,9 @@
     try { data = text ? JSON.parse(text) : null; } catch (e) { data = text; }
     if (!res.ok) {
       const msg = (data && (data.message || data.error || data.hint)) || `Request failed (${res.status})`;
-      throw new ApiError(msg, res.status, data && data.code);
+      const err = new ApiError(msg, res.status, data && data.code);
+      if (data && typeof data === 'object') { err.data = data; err.detail = data.detail || null; }
+      throw err;
     }
     return data;
   }
@@ -327,6 +330,17 @@
       s.onload = () => resolve(); s.onerror = () => reject(new Error(`Could not load ${src}`));
       document.head.appendChild(s);
     });
+  }
+
+  const defaultDeviceLabel = () => (navigator.userAgent.match(/iPhone|iPad|Android|Mac|Windows/) || [''])[0];
+  // After verify-code (or the bootstrap join): keep the token, forget the invite code.
+  function startSession(res) {
+    session.set({ token: res.sessionToken, memberId: res.member.id, createdAt: nowISO() });
+    store.set('user', res.member.id);
+    store.remove('pendingInvite');
+    clearCache();
+    realtime.ensure();
+    return Object.assign({}, res.member);
   }
 
   function handleSignedOut() {
@@ -668,18 +682,37 @@
       store.set('verified', true);       // app.js's gate key
       return roster;
     },
-    /* Login, step 2: pick your name. Stores the session and the app's 'user' key. */
+    /* Login, step 2: pick your name -> a 6-digit code goes to your email or phone.
+       Resolves to one of (see supabase/functions/join/index.ts):
+         { sent: true, channel, maskedTo, resendAfter, expiresIn, options, smsAvailable, devCode? }
+         { sent: false, active: true, ... }   a code from a moment ago is still good
+         { choose: true, options }            email and text both possible: call again with a channel
+         { bootstrap: true }                  nobody in the group has a contact yet: call join()
+       Rejects with an ApiError whose .code says why (no_contact, no_channel, resend_wait,
+       too_many_codes, send_failed with .detail, bad_invite). */
+    async requestCode(memberId, channel) {
+      const code = store.get('pendingInvite', null);
+      if (!code) throw new ApiError('Enter the invite code first.', 400, 'bad_invite');
+      return callFn('join', Object.assign({ action: 'request-code', group: GROUP, inviteCode: code, memberId }, channel ? { channel } : {}));
+    },
+    /* Login, step 3: the code from the email or text. Stores the session and the app's 'user' key. */
+    async verifyCode(memberId, code, deviceLabel) {
+      const invite = store.get('pendingInvite', null);
+      if (!invite) throw new ApiError('Enter the invite code first.', 400, 'bad_invite');
+      const res = await callFn('join', { action: 'verify-code', group: GROUP, inviteCode: invite, memberId,
+        code: String(code || '').replace(/\D/g, ''), deviceLabel: deviceLabel || defaultDeviceLabel() });
+      return startSession(res);
+    },
+    /* First-admin setup only: the server allows a code-free join while nobody in the
+       group has an email or phone (requestCode says { bootstrap: true }); otherwise 403. */
     async join(memberId, deviceLabel) {
       const code = store.get('pendingInvite', null);
-      if (!code) throw new ApiError('Enter the invite code first.', 400);
+      if (!code) throw new ApiError('Enter the invite code first.', 400, 'bad_invite');
       const res = await callFn('join', { action: 'join', group: GROUP, inviteCode: code, memberId,
-        deviceLabel: deviceLabel || (navigator.userAgent.match(/iPhone|iPad|Android|Mac|Windows/) || [''])[0] });
-      session.set({ token: res.sessionToken, memberId: res.member.id, createdAt: nowISO() });
-      store.set('user', res.member.id);
-      store.remove('pendingInvite');
-      clearCache();
-      realtime.ensure();
-      return res.member;
+        deviceLabel: deviceLabel || defaultDeviceLabel() });
+      const member = startSession(res);
+      if (res.bootstrap) member.bootstrap = true;
+      return member;
     },
     async signOut() {
       try { await rpc('sign_out'); } catch (e) { /* already gone */ }

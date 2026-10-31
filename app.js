@@ -1178,9 +1178,9 @@
         <div class="gate-inner">
           ${gateLogo(state.config, true)}
           <h1 class="gate-word">Who are you?</h1>
-          <p class="gate-lede">Tap your name. You only do this once on this device.</p>
+          <p class="gate-lede">${SUPA ? "Tap your name. We'll send a code to your email or phone to make sure it's you." : 'Tap your name. You only do this once on this device.'}</p>
           <div class="rows">${items || '<p class="gate-lede">No names loaded.</p>'}</div>
-          <button class="btn btn-ghost btn-block" id="who-back" type="button">Enter the invite code again</button>
+          <div class="gate-actions"><button class="gate-link" id="who-back" type="button">Enter the invite code again</button></div>
         </div>
         ${gateMotif('bottom')}
       </div>`, undefined, { gate: true });
@@ -1190,31 +1190,243 @@
       if (busy) return;
       const id = b.dataset.member;
       if (SUPA) {
-        // Creates this device's session, then loads the group as that member.
+        // Asks the server for a sign-in code (or, for the very first sign-in of a new group, lets them in).
         busy = true;
         $$('[data-member]').forEach((x) => { x.disabled = true; });
         b.setAttribute('aria-busy', 'true');
-        try {
-          await baseApi.join(id);
-        } catch (err) {
+        const unbusy = () => {
           busy = false;
           $$('[data-member]').forEach((x) => { x.disabled = false; });
           b.removeAttribute('aria-busy');
-          // 401: the code was rotated meanwhile. 400: the code isn't on this device any more (page reloaded).
-          const again = err && (err.status === 401 || err.status === 400);
-          if (again) { store.remove('verified'); return renderInvite('Enter the invite code again to continue.'); }
-          toast(friendlyError(err), 4000);
-          return;
+        };
+        let res;
+        try {
+          res = await baseApi.requestCode(id);
+          if (res.bootstrap) {
+            await baseApi.join(id);
+            store.set(bootstrapKey(id), true);
+          }
+        } catch (err) {
+          unbusy();
+          return loginError(id, err);
         }
-        await afterSignIn();
-        if (!state.loaded) { store.set('user', id); return renderLoadError(); }
+        if (res.choose) return renderCodeChannel(id, res.options);
+        if (!res.bootstrap) return renderCode(id, res);
+        return finishSignIn(id);
       }
-      store.set('user', id);
-      state.me = memberById(id) || state.members.find((m) => m.id === id);
-      if (!state.me) { toast("Couldn't find you on the roster. Try again."); return renderWho(); }
-      toast(`Welcome, ${state.me.name.split(' ')[0]}`);
-      if (location.hash !== '#/home') location.hash = '#/home'; else route();
+      finishSignIn(id);
     }));
+  }
+
+  // The roster entry for the name that was tapped (the roster from the invite step).
+  const loginMember = (id) => (state.members || []).find((m) => m.id === id) || { id, name: '' };
+  const loginFirst = (m) => String(m.name || '').split(' ')[0];
+  const bootstrapKey = (id) => `bootstrapSetup:${id}`;
+
+  // Supabase: the session exists now (code verified, or the first-admin join). Load the group as that member.
+  async function finishSignIn(id) {
+    stopCodeTimer();
+    if (SUPA) {
+      await afterSignIn();
+      if (!state.loaded) { store.set('user', id); return renderLoadError(); }
+    }
+    store.set('user', id);
+    state.me = memberById(id) || state.members.find((m) => m.id === id);
+    if (!state.me) { toast("Couldn't find you on the roster. Try again."); return renderWho(); }
+    toast(`Welcome, ${state.me.name.split(' ')[0]}`);
+    if (location.hash !== '#/home') location.hash = '#/home'; else route();
+  }
+
+  // A sign-in step failed. Invite problems go back to the invite screen; "ask your admin"
+  // problems get their own screen; anything else is a toast on the roster.
+  function loginError(id, err) {
+    const e = err || {};
+    if (e.code === 'bad_invite' || (e.status === 401 && !e.code)) {
+      store.remove('verified');
+      return renderInvite('Enter the invite code again to continue.');
+    }
+    if (e.code === 'no_contact' || e.code === 'no_channel' || e.code === 'too_many_codes' || e.code === 'send_failed' || e.code === 'not_on_roster') {
+      return renderLoginNote(id, e.message, e.detail);
+    }
+    if (e.code === 'network' || e.status === 0) return toast(friendlyError(e), 4000);
+    toast(e.message || friendlyError(e), 4000);
+  }
+
+  // "Ask your admin..." with a way back to the names.
+  function renderLoginNote(id, message, detail) {
+    stopCodeTimer();
+    showChrome(false);
+    const m = loginMember(id);
+    setView(`
+      <div class="gate gate-who gate-code">
+        ${gateMotif('top')}
+        <div class="gate-inner">
+          ${gateLogo(state.config, true)}
+          <h1 class="gate-word">${m.name ? `Hi ${esc(loginFirst(m))}` : 'One more step'}</h1>
+          <p class="gate-lede" role="alert">${esc(message || 'Ask your admin to add your email or phone first.')}</p>
+          ${detail ? `<p class="gate-detail">${esc(detail)}</p>` : ''}
+          <button class="btn btn-gold btn-block" id="note-back" type="button">Pick another name</button>
+        </div>
+        ${gateMotif('bottom')}
+      </div>`, undefined, { gate: true });
+    $('#note-back').addEventListener('click', () => renderWho());
+  }
+
+  const ICON_MAIL = '<svg class="code-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3.5 7l8.5 6 8.5-6"/></svg>';
+  const ICON_TEXT = '<svg class="code-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.2"/><path d="M10.5 18.5h3"/></svg>';
+  const channelLabel = (o) => (o.channel === 'sms' ? `Text ${o.maskedTo}` : `Email ${o.maskedTo}`);
+
+  // Email and text both possible: pick where the code goes.
+  function renderCodeChannel(id, options) {
+    stopCodeTimer();
+    showChrome(false);
+    const m = loginMember(id);
+    setView(`
+      <div class="gate gate-who gate-code">
+        ${gateMotif('top')}
+        <div class="gate-inner">
+          ${gateLogo(state.config, true)}
+          <h1 class="gate-word">Get your code</h1>
+          <p class="gate-lede">Hi ${esc(loginFirst(m))}. Where should we send your sign-in code?</p>
+          <div class="rows">${(options || []).map((o) => `
+            <button class="row" type="button" data-channel="${esc(o.channel)}">
+              ${o.channel === 'sms' ? ICON_TEXT : ICON_MAIL}
+              <span class="row-main"><span class="row-title">${o.channel === 'sms' ? 'Text' : 'Email'}</span><span class="row-sub">${esc(o.maskedTo)}</span></span>
+              ${chev}
+            </button>`).join('')}</div>
+          <div class="gate-actions"><button class="gate-link" id="code-not-me" type="button">Not ${esc(loginFirst(m))}? Pick another name</button></div>
+        </div>
+        ${gateMotif('bottom')}
+      </div>`, undefined, { gate: true });
+    $('#code-not-me').addEventListener('click', () => renderWho());
+    let busy = false;
+    $$('[data-channel]').forEach((b) => b.addEventListener('click', async () => {
+      if (busy) return;
+      busy = true;
+      $$('[data-channel]').forEach((x) => { x.disabled = true; });
+      b.setAttribute('aria-busy', 'true');
+      try {
+        const res = await baseApi.requestCode(id, b.dataset.channel);
+        renderCode(id, res);
+      } catch (err) {
+        busy = false;
+        $$('[data-channel]').forEach((x) => { x.disabled = false; });
+        b.removeAttribute('aria-busy');
+        if (err && err.code === 'resend_wait') return toast(err.message, 4000);
+        loginError(id, err);
+      }
+    }));
+  }
+
+  let codeTimer = null;
+  function stopCodeTimer() { if (codeTimer) { clearInterval(codeTimer); codeTimer = null; } }
+
+  // "Check your email": the 6-digit code, resend after 30 s, switch channel, or back to the names.
+  // info: the requestCode() answer ({ channel, maskedTo, resendAfter, options, devCode? }).
+  function renderCode(id, info, error) {
+    stopCodeTimer();
+    showChrome(false);
+    const m = loginMember(id);
+    const sms = info.channel === 'sms';
+    const other = (info.options || []).find((o) => o.channel !== info.channel);
+    setView(`
+      <div class="gate gate-who gate-code">
+        ${gateMotif('top')}
+        <div class="gate-inner">
+          ${gateLogo(state.config, true)}
+          <h1 class="gate-word">${sms ? 'Check your phone' : 'Check your email'}</h1>
+          <p class="gate-lede">Hi ${esc(loginFirst(m))}. We ${info.sent === false ? 'just sent' : 'sent'} a 6-digit code to <b>${esc(info.maskedTo)}</b>. It expires in 10 minutes.</p>
+          ${info.devCode ? `<p class="gate-dev">Test mode, nothing was sent. Your code is <b>${esc(info.devCode)}</b></p>` : ''}
+          <form id="code-form" class="gate-form" novalidate>
+            <label for="otp" class="sr-only">6-digit code</label>
+            <input id="otp" class="gate-input gate-otp" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="7" placeholder="6-digit code" spellcheck="false" aria-describedby="otp-err">
+            <p class="gate-error" id="otp-err" role="alert"${error ? '' : ' hidden'}>${esc(error || '')}</p>
+            <button class="btn btn-gold btn-block" type="submit" id="otp-verify">Verify</button>
+          </form>
+          <div class="gate-actions">
+            <button class="gate-link" id="code-resend" type="button">Resend code</button>
+            ${other ? `<button class="gate-link" id="code-switch" type="button">${other.channel === 'sms' ? 'Use text instead' : 'Use email instead'}</button>` : ''}
+            <button class="gate-link" id="code-not-me" type="button">Not ${esc(loginFirst(m))}? Pick another name</button>
+          </div>
+        </div>
+        ${gateMotif('bottom')}
+      </div>`, undefined, { gate: true });
+    const input = $('#otp');
+    const errEl = $('#otp-err');
+    const form = $('#code-form');
+    const verifyBtn = $('#otp-verify');
+    const resend = $('#code-resend');
+    const showErr = (msg) => {
+      errEl.textContent = msg; errEl.hidden = !msg;
+      if (msg) input.setAttribute('aria-invalid', 'true'); else input.removeAttribute('aria-invalid');
+    };
+    if (error) input.setAttribute('aria-invalid', 'true');
+    input.focus();
+
+    // Resend countdown.
+    let left = Math.max(0, Number(info.resendAfter) || 0);
+    const tick = () => {
+      if (!document.body.contains(resend)) return stopCodeTimer();
+      resend.disabled = left > 0;
+      resend.textContent = left > 0 ? `Resend code in ${left}s` : 'Resend code';
+      if (left <= 0) stopCodeTimer();
+      left -= 1;
+    };
+    const startTimer = (secs) => { stopCodeTimer(); left = secs; tick(); if (secs > 0) codeTimer = setInterval(tick, 1000); };
+    startTimer(left);
+
+    let busy = false;
+    const setBusy = (on) => {
+      busy = on;
+      [verifyBtn, resend, $('#code-switch')].forEach((x) => { if (x) x.disabled = on || (x === resend && left > 0); });
+      if (on) verifyBtn.setAttribute('aria-busy', 'true'); else verifyBtn.removeAttribute('aria-busy');
+    };
+
+    async function verify() {
+      if (busy) return;
+      const code = input.value.replace(/\D/g, '');
+      if (code.length !== 6) { showErr('Enter the 6-digit code.'); input.focus(); return; }
+      showErr('');
+      setBusy(true);
+      try {
+        await baseApi.verifyCode(id, code);
+      } catch (err) {
+        setBusy(false);
+        const e = err || {};
+        if (e.code === 'bad_invite' || (e.status === 401 && !e.code)) return loginError(id, e);
+        if (e.code === 'network' || e.status === 0) { showErr(friendlyError(e)); return; }
+        input.value = '';
+        input.focus();
+        showErr(e.message || "That code didn't work. Try again.");
+        return;
+      }
+      finishSignIn(id);
+    }
+    form.addEventListener('submit', (e) => { e.preventDefault(); verify(); });
+    // Pasted or autofilled codes go straight through.
+    input.addEventListener('input', () => {
+      if (errEl.textContent && !errEl.hidden) showErr('');
+      if (input.value.replace(/\D/g, '').length === 6) verify();
+    });
+
+    async function send(channel, note) {
+      if (busy) return;
+      setBusy(true);
+      try {
+        const res = await baseApi.requestCode(id, channel);
+        renderCode(id, res);
+        toast(note);
+      } catch (err) {
+        setBusy(false);
+        const e = err || {};
+        if (e.code === 'resend_wait') { startTimer(Number(e.data && e.data.resendAfter) || 30); showErr(e.message); return; }
+        if (e.code === 'network' || e.status === 0) { showErr(friendlyError(e)); return; }
+        loginError(id, e);
+      }
+    }
+    resend.addEventListener('click', () => send(info.channel, sms ? 'New code sent by text' : 'New code sent'));
+    if (other) $('#code-switch').addEventListener('click', () => send(other.channel, other.channel === 'sms' ? 'Code sent by text' : 'Code sent by email'));
+    $('#code-not-me').addEventListener('click', () => { stopCodeTimer(); renderWho(); });
   }
 
   // Supabase: right after join, or on start with a saved session. Never throws:
@@ -3062,7 +3274,7 @@
         <input id="ct-email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" maxlength="120" placeholder="you@example.com" value="${esc(c.email || '')}"></div>
       <div class="field"><label for="ct-phone">Mobile phone</label>
         <input id="ct-phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="24" placeholder="(512) 555-0123" value="${esc(prettyPhone(c.phone))}">
-        <p class="field-help">US mobile number. Used only for reminders.</p></div>
+        <p class="field-help">US mobile number. Used only for reminders and sign-in codes.</p></div>
       ${withPrefs ? `${switchRow('ct-sms', 'Text me reminders', 'To your mobile phone', !!c.phone && prefs.sms !== false)}
       ${switchRow('ct-mail', 'Email me reminders', 'To your email', prefs.email !== false)}
       <p class="field-help">Meeting reminders still reach you by email or notification if you turn both off.</p>` : ''}
@@ -3116,17 +3328,22 @@
   function renderProfileSetup() {
     showChrome(false);
     const cfg = state.config;
+    // First sign-in of a new group (no code, nobody had a contact yet): an email or phone is
+    // required here, so the next sign-in, theirs or anyone's, can use a code.
+    const first = !!store.get(bootstrapKey(state.me.id), false);
     setView(`
       <div class="onboard onboard-tight">
         ${cfg.logoSvg ? `<div class="logo-big logo-big-svg">${shorelineLogoSVG(96, 'var(--primary)')}</div>` : `<div class="logo-big" aria-hidden="true">${esc(cfg.logoText)}</div>`}
         <h1>Set up your profile</h1>
-        <p class="lede">So meeting reminders reach you. Only you and ${esc(cfg.name)}'s admins see your email and phone.</p>
+        <p class="lede">${first
+          ? `You're the first one in. Add your email or phone: sign-in codes and meeting reminders go there. Only you and ${esc(cfg.name)}'s admins see them.`
+          : `So meeting reminders reach you. Only you and ${esc(cfg.name)}'s admins see your email and phone.`}</p>
       </div>
       <form id="setup-form" class="setup-form" novalidate>
         ${contactFieldsHTML({ withBio: true })}
         <button class="btn btn-primary btn-block" type="submit" id="setup-save">Save and continue</button>
       </form>
-      <button class="link-btn" id="setup-skip">Skip for now</button>`);
+      ${first ? '' : '<button class="link-btn" id="setup-skip">Skip for now</button>'}`);
     window.scrollTo(0, 0);
     const form = $('#setup-form');
     bindContactFields(form);
@@ -3141,12 +3358,14 @@
       if (busy) return;
       const v = readContactFields(form);
       if (v.error) { toast(v.error); return; }
+      if (first && !v.email && !v.phone) { $('#ct-email').focus(); toast('Add your email or phone to continue'); return; }
       busy = true;
       $('#setup-save').disabled = true;
       try { await saveMyContact(v); } catch (err) { busy = false; $('#setup-save').disabled = false; return; }
+      store.remove(bootstrapKey(state.me.id));
       done('saved', 'Profile saved');
     });
-    $('#setup-skip').addEventListener('click', () => done('skipped', 'You can add these any time in Profile'));
+    if (!first) $('#setup-skip').addEventListener('click', () => done('skipped', 'You can add these any time in Profile'));
   }
 
   // Profile > Email, phone and reminders.
@@ -3383,7 +3602,8 @@
     }
     if (!rulesAccepted()) return renderRulesGate();
     // First run with Supabase: ask for email and phone once (saved or skipped).
-    if (SUPA && state.myContact && !contactComplete() && !store.get(setupKey(), null)) return renderProfileSetup();
+    if (SUPA && state.myContact && !contactComplete()
+      && (!store.get(setupKey(), null) || (store.get(bootstrapKey(state.me.id), false) && !state.myContact.email && !state.myContact.phone))) return renderProfileSetup();
     showChrome(true);
     const y = window.scrollY;
     if (keepScroll !== true) {

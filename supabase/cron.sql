@@ -68,6 +68,13 @@ select cron.schedule('mm-cleanup', '0 9 * * 0', $$
   delete from public.sessions           where revoked_at is not null and revoked_at < now() - interval '90 days';
 $$);
 
+-- Expired sign-in codes, hourly at :17 (also added by migrations_extra/0007), and
+-- sessions nobody has used for 270 days (they stopped working at 180).
+select cron.schedule('mm-login-codes-cleanup', '17 * * * *', $$
+  delete from public.login_codes where expires_at < now() - interval '1 hour';
+  delete from public.sessions where revoked_at is null and last_seen_at < now() - interval '270 days';
+$$);
+
 -- Check: select jobname, schedule, active from cron.job where jobname like 'mm-%';
 -- Runs:  select * from cron.job_run_details order by start_time desc limit 20;
 -- HTTP:  select * from net._http_response order by created desc limit 20;

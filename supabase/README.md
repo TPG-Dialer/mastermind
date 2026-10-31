@@ -12,7 +12,7 @@ The real backend for the Mastermind app: one Supabase project for both groups (T
 | `seed/generate.py` | Rebuilds `seed.sql` from `config/*.json` and `data/*.json` |
 | `cron.sql` | The schedule: reminders hourly, sending every 5 minutes, meetings monthly |
 | `migrations_extra/` | SQL added after the first deploy, one numbered file per change (see below) |
-| `functions/join` | Invite code + pick your name, returns a session |
+| `functions/join` | Invite code + pick your name + a one-time code by email or text, returns a session |
 | `functions/schedule-notifications` | Queues reminders that are coming due |
 | `functions/send-notifications` | Sends queued email, SMS and push |
 | `functions/generate-meetings` | Keeps 12 months of meetings and trainings on the calendar |
@@ -24,10 +24,21 @@ Also outside this folder: `../api-supabase.js` (the app's data layer for Supabas
 ## How login works (no passwords)
 
 1. A member opens the private link and types the group's invite code.
-2. The app calls the `join` function. It checks the code against a hash in `group_invites` and returns the roster.
-3. The member taps their name. `join` creates a row in `sessions` and gives the phone a long random token. Only the token's hash is stored.
-4. Every request to the database sends that token in an `x-session-token` header.
-5. Supabase's API (PostgREST) makes request headers readable inside Postgres. The function `current_member_id()` hashes the token, looks it up in `sessions` and returns the member. Every security rule in `policies.sql` is written in terms of `current_member_id()`, `current_group_id()` and `is_admin()`.
+2. The app calls the `join` function (`roster`). It checks the code against a hash in `group_invites` and returns the roster, plus `smsAvailable` (true when all four RingCentral secrets are set).
+3. The member taps their name. `join` (`request-code`) makes a 6-digit code, stores only a salted hash in `login_codes` (10 minutes, 5 tries, one per member), and sends it:
+   - by email through Resend, from `"<group name> <reminders@EMAIL_FROM_DOMAIN>"` (default domain `tpgmn.com`), subject "Your <group> sign-in code";
+   - or by text through RingCentral: "<group>: your sign-in code is 123456. Expires in 10 minutes."
+   With both an email and a phone (and texting set up) it first answers `{ choose: true, options }` and the member picks.
+4. The member types the code. `join` (`verify-code`) checks it with `verify_login_code()` (row lock, counts tries, deletes the code on success), then creates a row in `sessions` and gives the phone a long random token. Only the token's hash is stored.
+5. Every request to the database sends that token in an `x-session-token` header.
+6. Supabase's API (PostgREST) makes request headers readable inside Postgres. The function `current_member_id()` hashes the token, looks it up in `sessions` and returns the member. Every security rule in `policies.sql` is written in terms of `current_member_id()`, `current_group_id()` and `is_admin()`. A session that hasn't been used for 180 days stops working (the app touches it each time it opens).
+
+Exceptions and failures:
+- **No email or phone on file:** 409 "Ask your admin to add your email or phone first." Phone only while texting isn't set up: "Texting isn't set up yet. Ask your admin to add your email."
+- **First sign-in of a new group:** while no active member of the group has an email or phone (`login_contact()`), `request-code` answers `{ bootstrap: true }` and the plain `join` action creates the session without a code. That sign-in is logged (`join_attempts.kind = 'bootstrap'` and the function log). Once anyone has a contact, `join` answers 403 "Verification required".
+- **Sending fails or is in dry-run:** the code is thrown away and the app shows "We couldn't send the code; ask your admin." with the reason. Exception: with the secret `DEV_SHOW_CODES=true`, a dry-run code is returned to the app (`devCode`) and shown on screen, for testing before email is live.
+- **Sign-in codes ignore `DRY_RUN`.** A channel with credentials sends codes even while reminders are still in dry-run, because a code that is never delivered locks the member out.
+- **Rate limits** (`join_attempts`, by `kind`): 10 wrong invite codes per IP per 15 minutes; 5 codes per member and 15 per IP per hour; resend after 30 seconds (switching email/text is allowed right away); 15 wrong codes per IP per 15 minutes; 5 wrong tries per code.
 
 Why a header and not a token passed to every function: with the header, the app can read and write tables directly (filters, joins, upserts) and the database still knows who's asking on every row. Passing the token as a function argument would mean writing a database function for every screen.
 
@@ -72,7 +83,8 @@ You need the Supabase project (your existing account is fine), Node.js on your c
    ```
    npx supabase secrets set --project-ref YOUR-REF CRON_SECRET=your-long-random-string DRY_RUN=true APP_URL=https://YOUR-GITHUB-USER.github.io/mastermind/ ALLOWED_ORIGINS=https://YOUR-GITHUB-USER.github.io,http://localhost:8000
    ```
-   `DRY_RUN=true` means nothing is actually sent yet; messages are written to the function logs (Edge Functions > send-notifications > Logs). Remove it when you're ready (step 13).
+   `DRY_RUN=true` means no reminders are actually sent yet; messages are written to the function logs (Edge Functions > send-notifications > Logs). Remove it when you're ready (step 13).
+   The deploy workflow also sets `DEV_SHOW_CODES=true`: until email is set up, sign-in codes are shown in the app instead of sent. **Remove it at launch:** delete the `DEV_SHOW_CODES=true` line from `.github/workflows/supabase-deploy.yml`, then run `npx supabase secrets unset --project-ref YOUR-REF DEV_SHOW_CODES` (setting secrets never removes old ones).
 
 9. **Turn on the schedule.**
    - Open `cron.sql`. In step 1, replace the project URL and paste the same `CRON_SECRET`.
@@ -95,6 +107,7 @@ You need the Supabase project (your existing account is fine), Node.js on your c
 13. **Turn on real sending, one channel at a time.** A channel with no credentials stays in dry-run, so you can do email first.
     - **Email (Resend).** Create an account at resend.com and verify a sending domain (your own domain works). Then:
       `npx supabase secrets set --project-ref YOUR-REF RESEND_API_KEY=re_... "EMAIL_FROM=Flight Club <reminders@yourdomain.com>"`
+      Sign-in codes start going out as soon as `RESEND_API_KEY` is set (they don't wait for `DRY_RUN` to be removed). They come from `"The Shoreline <reminders@tpgmn.com>"` / `"Flight Club <reminders@tpgmn.com>"`: the group's name plus `reminders@` and `EMAIL_FROM_DOMAIN` (optional secret, default `tpgmn.com`, which must be the domain verified in Resend). Then remove `DEV_SHOW_CODES` (step 8).
     - **SMS (RingCentral).**
       1. In developers.ringcentral.com, create a REST API app with JWT auth and the SMS scope.
       2. Create a JWT credential for your user.
@@ -176,6 +189,8 @@ For a change:
 
 `0005_contacts_admin.sql`: the update rule on `member_contacts` now also checks the new row, so a member can't move their contact row to another member's id. Everything else the profile setup and admin screens need was already allowed: members read and write their own contact row, admins read and write anyone's in their group, members update their own reminder toggles and profile.
 
+`0007_login_verification.sql`: sign-in codes. Adds `login_codes` (service role only, no policies), `member_id` and `kind` columns on `join_attempts` for per-member and per-IP limits, `login_contact()` (a member's email/phone and whether anyone in the group has one) and `verify_login_code()` (both service role only), the 180-day limit in `current_member_id()`, and an hourly cron job `mm-login-codes-cleanup` that deletes expired codes (and sessions unused for 270 days). `schema.sql` and `cron.sql` have the same changes for fresh setups.
+
 `0006_real_rosters.sql`: replaces the sample data in both groups with the real rosters (ids like `fam-corey`, `fc-jeffrey`; sort order = hot seat order), sets the real meeting rules and usual places, the Flight Club training rule, and new invite codes, then calls `generate-meetings`. Each group is reset only once (it skips a group that already has its `fam-corey` / `fc-corey` member), so running it again never wipes real data. `seed.sql` is still the sample data for a fresh test setup.
 
 ## Switching the app to Supabase (done)
@@ -210,11 +225,13 @@ Beyond those steps, the app also: shows a profile setup screen after the rules w
 In the browser console on the app (not with `?backend=local`, which leaves `MASTERMIND_API` unset):
 ```js
 await MASTERMIND_API.verifyInvite('FAMILY2026')   // roster
-await MASTERMIND_API.join('m3')                   // Jake
+await MASTERMIND_API.requestCode('m3')            // { sent, channel, maskedTo, ... } (devCode with DEV_SHOW_CODES)
+await MASTERMIND_API.verifyCode('m3', '123456')   // the code from the email (or devCode)
 await MASTERMIND_API.getSession()                 // { memberId: 'm3', ... }
 (await MASTERMIND_API.getGetTogethers()).length   // Jake hosts the closed one, so 4
 ```
-If `getSession()` returns null right after `join`, the `x-session-token` header isn't reaching the database. Check that the project URL is right and that the request in the Network tab carries the header.
+On a brand-new group with no contacts, `requestCode` answers `{ bootstrap: true }`; then `await MASTERMIND_API.join('m3')`.
+If `getSession()` returns null right after `verifyCode`, the `x-session-token` header isn't reaching the database. Check that the project URL is right and that the request in the Network tab carries the header.
 
 Preview the next reminders without sending (PowerShell; use `curl.exe`, not the `curl` alias):
 ```
