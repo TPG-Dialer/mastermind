@@ -1,8 +1,9 @@
 {
+  "id": "/mastermind/shoreline",
   "name": "The Shoreline",
   "short_name": "Shoreline",
   "description": "Meetings, commitments and hot seat for The Shoreline, a family mastermind.",
-  "start_url": "./index.html?group=family",
+  "start_url": "./?group=family",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
