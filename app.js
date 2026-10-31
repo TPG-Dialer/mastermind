@@ -537,7 +537,9 @@
   function meetingLocation(meeting) { return normLocation(meeting && meeting.location) || groupLocation(); }
   const hasOwnLocation = (meeting) => !!normLocation(meeting && meeting.location);
   const isZoom = (loc) => loc.type === 'zoom' && !!loc.url;
-  const locText = (loc) => (loc.type === 'zoom' ? loc.label || 'Zoom' : loc.address || loc.label || 'In person');
+  // A place name set in the database (e.g. "Vendella Euro Boutique & Coffee Haus"), not the generic "In person".
+  const placeName = (loc) => (loc.type === 'inperson' && loc.label && loc.label !== LOC_LABEL.inperson ? loc.label : null);
+  const locText = (loc) => (loc.type === 'zoom' ? loc.label || 'Zoom' : placeName(loc) || loc.address || loc.label || 'In person');
   // "zoom.us/j/0000000000" (no scheme, no query) so people can see where the link goes.
   function shortUrl(u) {
     try { const x = new URL(u); return (x.host + x.pathname).replace(/\/$/, ''); } catch (e) { return u; }
@@ -816,7 +818,7 @@
     saveICS({
       id: meeting.id, title: meeting.title, start: new Date(meeting.datetime), end: meetingEnd(meeting),
       description: (zoom ? `Join: ${loc.url}\n\n` : '') + agendaText,
-      location: zoom ? loc.url : loc.address, alarm: '-P1D'
+      location: zoom ? loc.url : [placeName(loc), loc.address].filter(Boolean).join(', '), alarm: '-P1D'
     });
   }
   function downloadGetTogetherICS(e) {
@@ -1648,7 +1650,7 @@
     const over = Date.now() > end.getTime() + JOIN_LATE;
     const g = groupLocation();
     const own = hasOwnLocation(m) && !sameLocation(loc, g);
-    const whereSub = zoom ? shortUrl(loc.url) : loc.type === 'zoom' ? 'Link not added yet' : 'In person';
+    const whereSub = zoom ? shortUrl(loc.url) : loc.type === 'zoom' ? 'Link not added yet' : (placeName(loc) && loc.address) || 'In person';
     const whereNote = own && !over ? `<span class="where-note">Just this meeting. ${esc(g.type === 'zoom' ? 'Usually on Zoom' : `Usually: ${locText(g)}`)}.</span>` : '';
 
     let html = `${back('#/meetings', 'Meetings')}

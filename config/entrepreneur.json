@@ -26,15 +26,15 @@
   "meetingLengthMinutes": 120,
   "location": {
     "type": "inperson",
-    "label": "In person",
+    "label": "Vendella Euro Boutique & Coffee Haus",
     "url": null,
-    "address": "Location shared in announcements"
+    "address": "1440 Duckwood Dr Ste 600, Eagan, MN 55122"
   },
   "credit": { "label": "Built by TPG", "url": "https://tpgmn.com" },
   "sheetId": "PLACEHOLDER",
   "rules": [
     "Confidential means confidential. Names, numbers and stories stay in the room.",
-    "Attend every session. Miss two in a row and Rachel will call you.",
+    "Attend every session. Miss two in a row and an admin will call you.",
     "Check in by the start of the meeting. Hot seat prep is due 24 hours before.",
     "Start at 7:00 sharp and end on time.",
     "Give experience, not opinions. Say what you did, not what someone should do.",

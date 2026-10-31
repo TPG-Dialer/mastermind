@@ -176,6 +176,8 @@ For a change:
 
 `0005_contacts_admin.sql`: the update rule on `member_contacts` now also checks the new row, so a member can't move their contact row to another member's id. Everything else the profile setup and admin screens need was already allowed: members read and write their own contact row, admins read and write anyone's in their group, members update their own reminder toggles and profile.
 
+`0006_real_rosters.sql`: replaces the sample data in both groups with the real rosters (ids like `fam-corey`, `fc-jeffrey`; sort order = hot seat order), sets the real meeting rules and usual places, the Flight Club training rule, and new invite codes, then calls `generate-meetings`. Each group is reset only once (it skips a group that already has its `fam-corey` / `fc-corey` member), so running it again never wipes real data. `seed.sql` is still the sample data for a fresh test setup.
+
 ## Switching the app to Supabase (done)
 
 Done on 2026-10-31. For the record, these were the steps:
