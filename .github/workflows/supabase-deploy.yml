@@ -40,7 +40,7 @@ jobs:
         run: |
           set -e
           cd supabase
-          rm -f migrations/*.sql
+          mkdir -p migrations && rm -f migrations/*.sql
           cp schema.sql   migrations/20261031000001_schema.sql
           cp policies.sql migrations/20261031000002_policies.sql
           cp seed.sql     migrations/20261031000003_seed.sql
