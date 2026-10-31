@@ -11,7 +11,11 @@
   const DAY = 86400000;
 
   const params = new URLSearchParams(location.search);
-  const requested = window.MASTERMIND_GROUP || params.get('group');
+  // Group comes from the address: flightclub.tpgmn.com -> entrepreneur, shoreline.tpgmn.com -> family,
+  // otherwise ?group= (GitHub Pages / local), otherwise family.
+  const hostGroup = /^flightclub\./i.test(location.hostname) ? 'entrepreneur'
+    : /^shoreline\./i.test(location.hostname) ? 'family' : null;
+  const requested = window.MASTERMIND_GROUP || params.get('group') || hostGroup;
   const GROUP = GROUPS.includes(requested) ? requested : 'family';
 
   /* ---------- Safe localStorage ---------- */

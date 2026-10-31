@@ -1,0 +1,31 @@
+name: Mirror to flightclub repo
+
+# Pushes the same site to TPG-Dialer/mastermind-flightclub so it can be served
+# at flightclub.tpgmn.com (GitHub Pages allows one custom domain per repo).
+# Needs the MIRROR_TOKEN secret (fine-grained PAT, contents: write on that repo).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    if: ${{ vars.MIRROR_DISABLED != 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Push to mirror
+        env:
+          MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
+        run: |
+          if [ -z "$MIRROR_TOKEN" ]; then echo "MIRROR_TOKEN not set; skipping"; exit 0; fi
+          set -e
+          rm -rf .git supabase .github
+          echo "flightclub.tpgmn.com" > CNAME
+          # Pin the group so the root of this site is Flight Club even without the hostname rule.
+          sed -i 's#<script src="app.js"></script>#<script>window.MASTERMIND_GROUP = window.MASTERMIND_GROUP || "entrepreneur";</script>\n  <script src="app.js"></script>#' index.html
+          git init -q -b main
+          git config user.name "mirror-bot"; git config user.email "noreply@github.com"
+          git add -A
+          git commit -qm "Mirror of TPG-Dialer/mastermind@${GITHUB_SHA::7}"
+          git push -q --force "https://x-access-token:${MIRROR_TOKEN}@github.com/TPG-Dialer/mastermind-flightclub.git" main
