@@ -1173,10 +1173,12 @@
           ${gateLogo(state.config, true)}
           <h1 class="gate-word">Who are you?</h1>
           <p class="gate-lede">Tap your name. You only do this once on this device.</p>
-          <div class="rows">${items}</div>
+          <div class="rows">${items || '<p class="gate-lede">No names loaded.</p>'}</div>
+          <button class="btn btn-ghost btn-block" id="who-back" type="button">Enter the invite code again</button>
         </div>
         ${gateMotif('bottom')}
       </div>`, undefined, { gate: true });
+    $('#who-back').addEventListener('click', () => { store.remove('verified'); renderInvite(); });
     let busy = false;
     $$('[data-member]').forEach((b) => b.addEventListener('click', async () => {
       if (busy) return;
@@ -3368,7 +3370,11 @@
   function route(keepScroll) {
     if (!state.config) return;
     if (!store.get('verified', false)) return renderInvite();
-    if (!state.me) return renderWho();
+    if (!state.me) {
+      // No roster to choose from (e.g. a stale "verified" flag from the demo): ask for the code again.
+      if (!state.members || !state.members.length) { store.remove('verified'); return renderInvite(); }
+      return renderWho();
+    }
     if (!rulesAccepted()) return renderRulesGate();
     // First run with Supabase: ask for email and phone once (saved or skipped).
     if (SUPA && state.myContact && !contactComplete() && !store.get(setupKey(), null)) return renderProfileSetup();

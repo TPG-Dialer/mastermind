@@ -1,6 +1,6 @@
 // Simple cache-first service worker. Bump VERSION when files change.
 // Supabase requests go to another origin, so they are never cached here.
-const VERSION = 'mm-v10';
+const VERSION = 'mm-v11';
 const ASSETS = [
   './',
   './index.html',
