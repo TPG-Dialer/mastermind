@@ -17,6 +17,7 @@
 -- =====================================================================
 
 set check_function_bodies = on;
+set client_min_messages = warning;
 
 -- ---------------------------------------------------------------------
 -- Groups and settings
@@ -116,7 +117,7 @@ comment on table public.members is
 
 create table if not exists public.member_contacts (
   member_id   text primary key,
-  group_id    text not null,
+  group_id    text not null,          -- default set below, after current_group_id() exists
   email       text check (email is null or email ~* '^[^@\s]+@[^@\s]+\.[^@\s]+$'),
   phone       text check (phone is null or phone ~ '^\+[1-9][0-9]{7,14}$'),  -- E.164, e.g. +15125550123
   updated_at  timestamptz not null default now(),
@@ -204,6 +205,8 @@ language sql stable security definer set search_path = public, pg_temp as $$
   select coalesce((select m.role = 'admin' from public.members m where m.id = public.current_member_id()), false)
 $$;
 comment on function public.is_admin() is 'True when the caller is an admin of their group.';
+
+alter table public.member_contacts alter column group_id set default public.current_group_id();
 
 -- ---------------------------------------------------------------------
 -- Ground rules
@@ -879,6 +882,7 @@ declare
   has_push  boolean;
   has_phone boolean;
   has_email boolean;
+  want_sms  boolean;
   ch   text;
   out_ text[] := '{}';
 begin
@@ -890,17 +894,19 @@ begin
 
   if p_category = 'nudge' and pr.nudges is false then return '{}'; end if;
 
+  want_sms := 'sms' = any(p_channels) and public.sms_allowed(p_kind) and has_phone and coalesce(pr.sms, true);
+
   foreach ch in array p_channels loop
     if ch = 'sms' then
-      if public.sms_allowed(p_kind) and has_phone and coalesce(pr.sms, true) then
+      if want_sms then
         out_ := out_ || 'sms'::text;
       elsif has_email and coalesce(pr.email, true) and not ('push' = any(p_channels) and has_push) then
         out_ := out_ || 'email'::text;            -- no phone (or SMS off): email instead, unless push already covers it
       end if;
     elsif ch = 'push' then
       if has_push then out_ := out_ || 'push'::text;
-      elsif has_email and (coalesce(pr.email, true) or p_category = 'meeting') then
-        out_ := out_ || 'email'::text;            -- no push subscription: email fallback
+      elsif not want_sms and has_email and (coalesce(pr.email, true) or p_category = 'meeting') then
+        out_ := out_ || 'email'::text;            -- no push subscription: email fallback (not needed if SMS goes out)
       end if;
     elsif ch = 'email' then
       if has_email and coalesce(pr.email, true) then out_ := out_ || 'email'::text; end if;
@@ -1118,14 +1124,13 @@ create trigger notify_schedule_change after update of starts_at, video_url on pu
 -- Authorization is checked inside each function.
 -- =====================================================================
 
--- Public: branding for the invite screen (no secrets).
+-- Public (no session needed): branding for the invite screen. Deliberately no
+-- rules, location or Zoom link; members read those from group_settings (RLS).
 create or replace function public.get_group_config(p_group text) returns jsonb
 language sql stable security definer set search_path = public, pg_temp as $$
   select jsonb_build_object(
     'id', g.id, 'name', g.name, 'subtitle', g.subtitle, 'tagline', g.tagline,
-    'verse', s.verse, 'credit', s.credit, 'rules', s.rules, 'rulesVersion', s.rules_version,
-    'location', coalesce(s.location_override, s.location_default),
-    'locationDefault', s.location_default,
+    'verse', s.verse, 'credit', s.credit,
     'meetingLengthMinutes', coalesce((s.meeting_rule->>'durationMinutes')::int, 60)
   ) || s.branding
   from public.groups g join public.group_settings s on s.group_id = g.id
@@ -1447,7 +1452,7 @@ begin
   returning q.*;
 end $$;
 
--- Records the outcome. failed rows retry up to 3 times (10, 20 min later).
+-- Records the outcome. failed rows retry up to 3 times (10, 20 min later) unless marked permanent.
 create or replace function public.finish_notifications(p_results jsonb) returns int
 language plpgsql security definer set search_path = public, pg_temp as $$
 declare r jsonb; q public.notification_queue; st text; n int := 0;
@@ -1460,8 +1465,9 @@ begin
       continue;
     end if;
     update public.notification_queue set
-      status = case when st = 'failed' and attempts < 3 then 'pending' else st end,
-      send_after = case when st = 'failed' and attempts < 3 then now() + attempts * interval '10 minutes' else send_after end,
+      status = case when st = 'failed' and attempts < 3 and not coalesce((r->>'permanent')::boolean, false) then 'pending' else st end,
+      send_after = case when st = 'failed' and attempts < 3 and not coalesce((r->>'permanent')::boolean, false)
+                        then now() + attempts * interval '10 minutes' else send_after end,
       last_error = r->>'error', locked_at = null,
       sent_at = case when st = 'sent' then now() else sent_at end
     where id = (r->>'id')::bigint returning * into q;

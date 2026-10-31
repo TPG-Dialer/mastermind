@@ -186,4 +186,18 @@ All data access is in the `api` object at the top of `app.js`. Each method retur
 
 Replace their bodies with calls to the Apps Script web app; the screens don't need to change.
 
-Privacy note for the backend: in the prototype `getGetTogethers` returns everything and the screens hide invite-only events. The real Apps Script must filter on the server (open ones, plus closed ones where the caller is host, invitee or admin), or anyone could read them from the network.
+Privacy note for the backend: in the prototype `getGetTogethers` returns everything and the screens hide invite-only events. The real backend must filter on the server (open ones, plus closed ones where the caller is host, invitee or admin), or anyone could read them from the network.
+
+## Supabase backend (built, not switched on yet)
+
+The backend is Supabase (it replaced the Google Sheets + Apps Script plan). Everything is in `supabase/`; setup steps are in `supabase/README.md` and the reminder plan is in `supabase/NOTIFICATIONS.md`.
+
+- `api-supabase.js` is a drop-in replacement for `api`: the same method names, arguments and return shapes, plus extras for login, trainings, reminders and admin. It reads `config/supabase.js` (project URL and key; placeholders for now).
+- On the server, closed get-togethers, contact details and other groups' data are filtered by row-level security, not by the screens.
+
+How the swap will happen (details in `supabase/README.md`, "Switching the app to Supabase"):
+1. `index.html`: one line above `app.js`: `<script src="config/supabase.js"></script><script src="api-supabase.js"></script>`
+2. `app.js` line 34: `const api = window.MASTERMIND_API || (function () {`. With the two scripts left out, the prototype keeps working exactly as now.
+3. The invite, name-pick and switch-user handlers call `api.verifyInvite`, `api.join` and `api.signOut`, because the server now checks the invite code.
+
+The data calls need only steps 1 and 2. Step 3 is needed because a real login can't be checked in the browser.
