@@ -8,6 +8,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   mirror:
     runs-on: ubuntu-latest
@@ -28,4 +32,12 @@ jobs:
           git config user.name "mirror-bot"; git config user.email "noreply@github.com"
           git add -A
           git commit -qm "Mirror of TPG-Dialer/mastermind@${GITHUB_SHA::7}"
-          git push -q --force "https://x-access-token:${MIRROR_TOKEN}@github.com/TPG-Dialer/mastermind-flightclub.git" main
+          git push --force "https://x-access-token:${MIRROR_TOKEN}@github.com/TPG-Dialer/mastermind-flightclub.git" main 2>&1 | sed "s/${MIRROR_TOKEN}/***/g" | tee push.log
+          test "${PIPESTATUS[0]}" -eq 0
+      - name: Report failure as an issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          { echo "Mirror failed. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"; echo '```'; tail -n 40 push.log 2>/dev/null; echo '```'; } > body.md
+          gh issue create --title "Mirror failed (run $GITHUB_RUN_NUMBER)" --body-file body.md || true
