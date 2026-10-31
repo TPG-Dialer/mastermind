@@ -14,7 +14,10 @@
   <script>
     // Pick the per-group manifest and icons before the browser reads them.
     (function () {
-      var g = window.MASTERMIND_GROUP || new URLSearchParams(location.search).get('group');
+      var host = location.hostname;
+      var hostGroup = /^flightclub\./i.test(host) ? 'entrepreneur' : (/^shoreline\./i.test(host) ? 'family' : null);
+      var g = window.MASTERMIND_GROUP || new URLSearchParams(location.search).get('group') || hostGroup;
+      if (g) window.MASTERMIND_GROUP = g;
       if (g === 'entrepreneur') {
         document.getElementById('manifest-link').href = 'manifest-entrepreneur.webmanifest';
         document.getElementById('touch-icon').href = 'icons/entrepreneur-192.png';
