@@ -67,3 +67,4 @@ That's it. After the next call, give Zoom a few minutes to finish the summary; t
 - **Editing:** admins can tap **Edit** on the Zoom notes to fix the summary, key points or next steps, and **Assign** a next step to someone. Zoom's original stays saved on the server. If Zoom re-sends the summary later, your edits are kept.
 - **Next steps:** a step that starts with someone's name ("Faith will...", "Corey: ...") is assigned to them automatically. Whoever a step is assigned to (or anyone, if it's open) can tap **Make this my commitment**.
 - **If notes don't show up:** in Supabase, open **Edge Functions > zoom-webhook > Logs**. "ignored" means the meeting ID in the app doesn't match the call (redo part E). "credentials not set" means a secret is missing (part C). "meeting_summary 404" means Zoom hadn't made a summary for that call (check part A).
+
