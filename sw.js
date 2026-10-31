@@ -1,6 +1,6 @@
-// Simple cache-first service worker. Bump VERSION when files change.
+// Service worker: network-first for page/code, cache-first for static assets. Bump VERSION when assets change.
 // Supabase requests go to another origin, so they are never cached here.
-const VERSION = 'mm-v11';
+const VERSION = 'mm-v12';
 const ASSETS = [
   './',
   './index.html',
@@ -40,19 +40,26 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
+  const path = new URL(req.url).pathname;
+  // Network-first for the page and code (so updates show on the next load), falling back to cache offline.
+  const networkFirst = req.mode === 'navigate' || /\.(js|css|json|webmanifest)$/.test(path);
   // Navigations ignore the ?group= query so one cached index.html serves both groups.
   const ignoreSearch = req.mode === 'navigate';
-  e.respondWith(
-    caches.match(req, { ignoreSearch }).then((hit) => {
-      if (hit) return hit;
-      return fetch(req).then((res) => {
-        if (res.ok) {
-          const copy = res.clone();
-          caches.open(VERSION).then((c) => c.put(req, copy));
-        }
+  if (networkFirst) {
+    e.respondWith(
+      fetch(req).then((res) => {
+        if (res.ok) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(req, copy)); }
         return res;
-      });
-    })
+      }).catch(() => caches.match(req, { ignoreSearch }))
+    );
+    return;
+  }
+  // Cache-first for images, fonts and other static assets.
+  e.respondWith(
+    caches.match(req).then((hit) => hit || fetch(req).then((res) => {
+      if (res.ok) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(req, copy)); }
+      return res;
+    }))
   );
 });
 
