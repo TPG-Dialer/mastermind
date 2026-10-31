@@ -451,3 +451,50 @@ create policy mm_contacts_update on public.member_contacts for update to anon
          and (member_id = (select public.current_member_id()) or (select public.is_admin())))
   with check (group_id = (select public.current_group_id())
               and (member_id = (select public.current_member_id()) or (select public.is_admin())));
+
+-- ---------------------------------------------------------------------
+-- Added by migrations_extra/0008_meeting_notes.sql (kept here so a fresh
+-- setup from this file gets the same rules). Meeting notes: group reads
+-- (unattached Zoom notes: admins only), admins write manual notes and edit
+-- any; the raw Zoom payload is never readable by the app; Zoom rows come
+-- from ingest_zoom_summary() (service role only).
+-- ---------------------------------------------------------------------
+alter table public.meeting_notes enable row level security;
+revoke all on public.meeting_notes from anon, authenticated;
+grant select (id, group_id, meeting_id, source, title, summary, key_points, next_steps, zoom_topic, zoom_start_at,
+              created_by, edited_by, edited_at, created_at, updated_at) on public.meeting_notes to anon;
+grant insert (id, meeting_id, title, summary, key_points, next_steps) on public.meeting_notes to anon;
+grant update (meeting_id, title, summary, key_points, next_steps) on public.meeting_notes to anon;
+grant delete on public.meeting_notes to anon;
+
+revoke all on function public.ingest_zoom_summary(jsonb) from public, anon, authenticated;
+revoke all on function public.note_step_member(text, text) from public, anon, authenticated;
+revoke all on function public.tg_meeting_notes_guard() from public, anon, authenticated;
+revoke all on function public.tg_notify_meeting_notes() from public, anon, authenticated;
+revoke all on function public.zoom_meeting_id_from_url(text) from public, anon, authenticated;
+revoke all on function public.valid_note_lists(jsonb, jsonb) from public;
+grant execute on function public.valid_note_lists(jsonb, jsonb) to anon;
+grant execute on function public.set_group_location(jsonb) to anon;
+do $$ begin
+  if exists (select 1 from pg_roles where rolname = 'service_role') then
+    grant all on public.meeting_notes to service_role;
+    grant execute on function public.ingest_zoom_summary(jsonb) to service_role;
+    grant execute on function public.note_step_member(text, text) to service_role;
+    grant execute on function public.zoom_meeting_id_from_url(text) to service_role;
+    grant execute on function public.valid_note_lists(jsonb, jsonb) to service_role;
+  end if;
+end $$;
+
+drop policy if exists mm_notes_select on public.meeting_notes;
+create policy mm_notes_select on public.meeting_notes for select to anon
+  using (group_id = (select public.current_group_id()) and (meeting_id is not null or (select public.is_admin())));
+drop policy if exists mm_notes_insert on public.meeting_notes;
+create policy mm_notes_insert on public.meeting_notes for insert to anon
+  with check (group_id = (select public.current_group_id()) and (select public.is_admin()) and source = 'manual');
+drop policy if exists mm_notes_update on public.meeting_notes;
+create policy mm_notes_update on public.meeting_notes for update to anon
+  using (group_id = (select public.current_group_id()) and (select public.is_admin()))
+  with check (group_id = (select public.current_group_id()) and (select public.is_admin()));
+drop policy if exists mm_notes_delete on public.meeting_notes;
+create policy mm_notes_delete on public.meeting_notes for delete to anon
+  using (group_id = (select public.current_group_id()) and (select public.is_admin()));

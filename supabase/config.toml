@@ -9,3 +9,5 @@ verify_jwt = false
 verify_jwt = false
 [functions.generate-meetings]
 verify_jwt = false
+[functions.zoom-webhook]
+verify_jwt = false

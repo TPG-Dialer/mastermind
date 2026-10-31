@@ -2,7 +2,7 @@ name: Deploy to Supabase
 
 # Runs when anything under supabase/ changes on main, or by hand from the
 # Actions tab. Applies the SQL (schema, policies, seed, cron) as migrations,
-# deploys the four Edge Functions, and sets their secrets.
+# deploys the Edge Functions, and sets their secrets.
 on:
   push:
     branches: [main]
@@ -18,6 +18,11 @@ env:
   SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
   SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
   RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+  # Zoom AI Companion notes (supabase/ZOOM.md). Empty until the Zoom app exists.
+  ZOOM_WEBHOOK_SECRET_TOKEN: ${{ secrets.ZOOM_WEBHOOK_SECRET_TOKEN }}
+  ZOOM_ACCOUNT_ID: ${{ secrets.ZOOM_ACCOUNT_ID }}
+  ZOOM_CLIENT_ID: ${{ secrets.ZOOM_CLIENT_ID }}
+  ZOOM_CLIENT_SECRET: ${{ secrets.ZOOM_CLIENT_SECRET }}
   APP_URL: https://shoreline.tpgmn.com/
   ALLOWED_ORIGINS: https://shoreline.tpgmn.com,https://flightclub.tpgmn.com,http://shoreline.tpgmn.com,http://flightclub.tpgmn.com,https://tpg-dialer.github.io,http://localhost:8000,http://localhost:8765
 
@@ -75,7 +80,7 @@ jobs:
       - name: Deploy Edge Functions
         run: |
           set -o pipefail
-          for fn in join schedule-notifications send-notifications generate-meetings; do
+          for fn in join schedule-notifications send-notifications generate-meetings zoom-webhook; do
             supabase functions deploy "$fn" --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt 2>&1 | tail -n 60 | tee -a push.log
           done
 
@@ -88,6 +93,10 @@ jobs:
             CRON_SECRET="$CRON_SECRET" \
             DRY_RUN=true \
             RESEND_API_KEY="$(printf '%s' "$RESEND_API_KEY" | tr -d '[:space:]')" \
+            ZOOM_WEBHOOK_SECRET_TOKEN="$(printf '%s' "$ZOOM_WEBHOOK_SECRET_TOKEN" | tr -d '[:space:]')" \
+            ZOOM_ACCOUNT_ID="$(printf '%s' "$ZOOM_ACCOUNT_ID" | tr -d '[:space:]')" \
+            ZOOM_CLIENT_ID="$(printf '%s' "$ZOOM_CLIENT_ID" | tr -d '[:space:]')" \
+            ZOOM_CLIENT_SECRET="$(printf '%s' "$ZOOM_CLIENT_SECRET" | tr -d '[:space:]')" \
             EMAIL_FROM_DOMAIN=tpgmn.com \
             "EMAIL_FROM=Mastermind <reminders@tpgmn.com>" \
             DEV_SHOW_CODES=true \
@@ -104,7 +113,7 @@ jobs:
           python3 - <<'PY'
           import os, pathlib
           log = pathlib.Path('push.log').read_text(errors='replace') if pathlib.Path('push.log').exists() else '(no push.log)'
-          for k in ('SUPABASE_DB_PASSWORD', 'CRON_SECRET', 'SUPABASE_ACCESS_TOKEN'):
+          for k in ('SUPABASE_DB_PASSWORD', 'CRON_SECRET', 'SUPABASE_ACCESS_TOKEN', 'ZOOM_WEBHOOK_SECRET_TOKEN', 'ZOOM_CLIENT_SECRET'):
               v = os.environ.get(k)
               if v: log = log.replace(v, '***')
           lines = log.splitlines()[-150:]

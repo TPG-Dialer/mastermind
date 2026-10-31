@@ -16,8 +16,10 @@ The real backend for the Mastermind app: one Supabase project for both groups (T
 | `functions/schedule-notifications` | Queues reminders that are coming due |
 | `functions/send-notifications` | Sends queued email, SMS and push |
 | `functions/generate-meetings` | Keeps 12 months of meetings and trainings on the calendar |
+| `functions/zoom-webhook` | Zoom AI Companion summaries -> meeting notes (setup: `ZOOM.md`) |
 | `functions/_shared` | Code the functions share (time math, adapters, hashing) |
 | `NOTIFICATIONS.md` | The reminder plan these functions implement |
+| `ZOOM.md` | Step-by-step: connect Zoom so meeting summaries come in |
 
 Also outside this folder: `../api-supabase.js` (the app's data layer for Supabase) and `../config/supabase.js` (project URL and key).
 
@@ -70,14 +72,15 @@ You need the Supabase project (your existing account is fine), Node.js on your c
    npx supabase login
    ```
 
-7. **Deploy the four functions.** Replace `YOUR-REF` with your project ref:
+7. **Deploy the functions.** Replace `YOUR-REF` with your project ref:
    ```
    npx supabase functions deploy join --project-ref YOUR-REF --no-verify-jwt
    npx supabase functions deploy schedule-notifications --project-ref YOUR-REF --no-verify-jwt
    npx supabase functions deploy send-notifications --project-ref YOUR-REF --no-verify-jwt
    npx supabase functions deploy generate-meetings --project-ref YOUR-REF --no-verify-jwt
+   npx supabase functions deploy zoom-webhook --project-ref YOUR-REF --no-verify-jwt
    ```
-   `--no-verify-jwt` is on purpose. `join` is the public front door. The other three check their own `CRON_SECRET`.
+   `--no-verify-jwt` is on purpose. `join` is the public front door. `zoom-webhook` checks Zoom's signature. The other three check their own `CRON_SECRET`.
 
 8. **Set the function secrets.** Make up a long random `CRON_SECRET`, for example from a password manager, 40+ characters.
    ```
@@ -190,6 +193,10 @@ For a change:
 `0005_contacts_admin.sql`: the update rule on `member_contacts` now also checks the new row, so a member can't move their contact row to another member's id. Everything else the profile setup and admin screens need was already allowed: members read and write their own contact row, admins read and write anyone's in their group, members update their own reminder toggles and profile.
 
 `0007_login_verification.sql`: sign-in codes. Adds `login_codes` (service role only, no policies), `member_id` and `kind` columns on `join_attempts` for per-member and per-IP limits, `login_contact()` (a member's email/phone and whether anyone in the group has one) and `verify_login_code()` (both service role only), the 180-day limit in `current_member_id()`, and an hourly cron job `mm-login-codes-cleanup` that deletes expired codes (and sessions unused for 270 days). `schema.sql` and `cron.sql` have the same changes for fresh setups.
+
+`0008_meeting_notes.sql`: meeting notes. Adds `meeting_notes` (one `manual` and one `zoom` note per meeting; `raw` keeps the Zoom payload and isn't readable by the app; unattached Zoom notes are admins-only), `group_settings.zoom_meeting_id` (filled by `set_group_location()` from `/j/<digits>` in the Zoom link, and backfilled from a saved link), `ingest_zoom_summary()` (service role only: matches a summary to the group and to the meeting starting within 6 hours, upserts the note, assigns next steps that start with a member's name), and triggers that queue `notes_ready` (group) and `notes_unmatched` (admins). Admins write manual notes and edit any note's summary, points, steps and meeting; a Zoom note keeps its title. `schema.sql` and `policies.sql` end with the same statements.
+
+The `zoom-webhook` function (deployed with `--no-verify-jwt`; Zoom's signature is the check) needs `ZOOM_WEBHOOK_SECRET_TOKEN`, and `ZOOM_ACCOUNT_ID` / `ZOOM_CLIENT_ID` / `ZOOM_CLIENT_SECRET` when a webhook arrives without the summary in it. The deploy workflow sets all four from GitHub secrets (empty is fine until Zoom is set up). Steps for Corey: `ZOOM.md`.
 
 `0006_real_rosters.sql`: replaces the sample data in both groups with the real rosters (ids like `fam-corey`, `fc-jeffrey`; sort order = hot seat order), sets the real meeting rules and usual places, the Flight Club training rule, and new invite codes, then calls `generate-meetings`. Each group is reset only once (it skips a group that already has its `fam-corey` / `fc-corey` member), so running it again never wipes real data. `seed.sql` is still the sample data for a fresh test setup.
 

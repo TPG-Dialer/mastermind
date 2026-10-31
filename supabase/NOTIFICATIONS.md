@@ -50,6 +50,10 @@ What the messages contain:
 | `comment_on_post` | comment on your announcement, idea or book, or a plain reply on your ask | the author | push |
 | `gettogether_invite` | you're invited to a closed get-together | the invitee | push |
 | `schedule_change` | meeting or training time or place changes (admin edit, or a rule change re-timing it) | everyone | SMS + push |
+| `notes_ready` | Zoom AI Companion notes land on a meeting (on arrival, or when an admin files unmatched ones) | everyone | push (email if no push) |
+| `notes_unmatched` | Zoom notes arrived but didn't match a meeting | admins | push + email |
+
+Notes an admin types in the app don't notify anyone; Home shows "Notes from {meeting}" until each person opens them.
 
 Schedule changes only notify for events in the next 45 days, so re-timing a whole year at once doesn't text everyone twelve times.
 

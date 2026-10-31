@@ -344,6 +344,37 @@
         return delay(loc || null);
       },
 
+      /* Meeting notes (see api-supabase.js for the shape). Demo mode keeps them in this browser. */
+      async getNotes(meetingId) { return delay(((await load()).meetingNotes || []).filter((n) => n.meetingId === meetingId)); },
+      async listNotesIndex() {
+        return delay(((await load()).meetingNotes || []).map((n) => Object.assign({}, n, {
+          text: [n.title, n.summary].concat(n.keyPoints || [], (n.nextSteps || []).map((x) => x.text)).join('\n') })));
+      },
+      async saveNotes(note) {
+        const d = await load();
+        d.meetingNotes = d.meetingNotes || [];
+        let n = note.id && d.meetingNotes.find((x) => x.id === note.id);
+        if (!n) {
+          if (d.meetingNotes.some((x) => x.meetingId === note.meetingId && x.source === 'manual')) throw new Error('This meeting already has notes');
+          n = { id: uid('nt'), meetingId: note.meetingId, source: 'manual', title: '', summary: '', keyPoints: [], nextSteps: [],
+            createdBy: note.createdBy || null, createdAt: nowISO(), editedBy: null, editedAt: null };
+          d.meetingNotes.push(n);
+        } else {
+          Object.assign(n, { editedBy: note.editedBy || null, editedAt: nowISO() });
+        }
+        ['title', 'summary', 'keyPoints', 'meetingId'].forEach((k) => { if (k in note) n[k] = note[k]; });
+        if ('nextSteps' in note) n.nextSteps = note.nextSteps.filter((x) => x && x.text).map((x) => ({ text: x.text, memberId: x.memberId || null }));
+        n.updatedAt = nowISO();
+        save();
+        return delay(n);
+      },
+      async deleteNotes(id) {
+        const d = await load();
+        d.meetingNotes = (d.meetingNotes || []).filter((x) => x.id !== id);
+        save();
+        return delay(true);
+      },
+
       async resetDemo() {
         store.remove('data');
         store.remove('groupLocation');
@@ -395,9 +426,9 @@
   /* ---------- State ---------- */
   const state = {
     config: null, members: [], meetings: [], commitments: [], goals: [], checkins: [], asks: [],
-    announcements: [], ideas: [], books: [], readingList: [], gettogethers: [], groupLocation: null,
+    announcements: [], ideas: [], books: [], readingList: [], gettogethers: [], notes: [], groupLocation: null,
     me: null, filter: 'all', editPrep: false, lastPath: null,
-    ideaFilter: 'all', bookFilter: 'all', gtPast: false,
+    ideaFilter: 'all', bookFilter: 'all', gtPast: false, notesQuery: '',
     // Supabase mode only:
     session: null,        // get_session_info(): { memberId, role, rulesVersion, rulesAcceptedAt, ... }
     myContact: null,      // { email, phone } or null when not loaded
@@ -574,7 +605,13 @@
   }
 
   // Location fields for a sheet. `inheritable` adds the "Use group default" switch (meeting editor).
-  function locationEditorHTML(loc, { inheritable = false, inherit = false } = {}) {
+  // "https://us06web.zoom.us/j/85123456789?pwd=..." -> "85123456789" (same rule as the server's zoom_meeting_id_from_url).
+  function zoomMeetingId(url) {
+    const m = String(url || '').match(/\/j\/(\d{9,12})(?!\d)/);
+    return m && !/^0+$/.test(m[1]) ? m[1] : null;
+  }
+  const fmtZoomId = (id) => (id.length === 11 ? `${id.slice(0, 3)} ${id.slice(3, 7)} ${id.slice(7)}` : id.length === 10 ? `${id.slice(0, 3)} ${id.slice(3, 6)} ${id.slice(6)}` : id);
+  function locationEditorHTML(loc, { inheritable = false, inherit = false, zoomHint = false } = {}) {
     const g = groupLocation();
     const seg = (t) => `<button type="button" role="radio" class="seg-active ${loc.type === t ? 'on' : ''}" aria-checked="${loc.type === t}" data-loc-type="${t}">${t === 'zoom' ? videoIcon : mapPinIcon}${LOC_LABEL[t]}</button>`;
     return `<div class="loc-edit">
@@ -584,7 +621,8 @@
       <div id="loc-fields" ${inheritable && inherit ? 'hidden' : ''}>
         <div class="segmented loc-seg" role="radiogroup" aria-label="Where" id="loc-type">${seg('zoom')}${seg('inperson')}</div>
         <div class="field" id="loc-url-wrap" ${loc.type === 'zoom' ? '' : 'hidden'}><label for="loc-url">Zoom link</label>
-          <input id="loc-url" type="url" inputmode="url" autocomplete="off" spellcheck="false" maxlength="300" placeholder="https://zoom.us/j/..." value="${esc(loc.url || '')}"></div>
+          <input id="loc-url" type="url" inputmode="url" autocomplete="off" spellcheck="false" maxlength="300" placeholder="https://zoom.us/j/..." value="${esc(loc.url || '')}">
+          ${zoomHint ? '<p class="field-help zoom-id-hint" id="zoom-id-hint" aria-live="polite"></p>' : ''}</div>
         <div class="field" id="loc-addr-wrap" ${loc.type === 'inperson' ? '' : 'hidden'}><label for="loc-addr">Address or place</label>
           <input id="loc-addr" maxlength="160" autocomplete="street-address" placeholder="e.g. 412 Lake St, or Mark &amp; Linda's house" value="${esc(loc.address || '')}"></div>
       </div>
@@ -600,6 +638,19 @@
     }));
     const inh = sheet.querySelector('#loc-inherit');
     if (inh) inh.addEventListener('change', () => { sheet.querySelector('#loc-fields').hidden = inh.checked; });
+    const hint = sheet.querySelector('#zoom-id-hint');
+    const url = sheet.querySelector('#loc-url');
+    if (hint && url) {
+      const show = () => {
+        const v = url.value.trim();
+        const id = zoomMeetingId(v);
+        hint.textContent = id ? `Zoom meeting ID ${fmtZoomId(id)}. AI Companion notes from this meeting come into the app.`
+          : v ? "This link has no meeting ID (zoom.us/j/ and numbers), so Zoom's meeting notes can't come into the app." : '';
+        hint.hidden = !hint.textContent;
+      };
+      url.addEventListener('input', show);
+      show();
+    }
   }
   // Returns { loc } (null = use group default), or { error } after focusing the field to fix.
   function readLocationEditor(sheet, draft) {
@@ -625,7 +676,7 @@
     openSheet(`
       <h2>Meeting location</h2>
       <p class="sheet-sub">Where ${esc(state.config.name)} usually meets. One meeting can be different: change it in Edit meeting.</p>
-      ${locationEditorHTML(cur)}
+      ${locationEditorHTML(cur, { zoomHint: true })}
       <div class="sheet-actions"><button class="btn btn-ghost" data-cancel>Cancel</button><button class="btn btn-primary" id="loc-save">Save location</button></div>`, (sheet) => {
       bindLocationEditor(sheet, draft);
       sheet.querySelector('#loc-save').addEventListener('click', async () => {
@@ -686,6 +737,8 @@
       ${backHtml}${lead}<h1 class="page-title">${esc(title)}</h1>${sub ? `<p class="page-sub">${esc(sub)}</p>` : ''}</header>`;
   const extIcon = '<svg class="ext" viewBox="0 0 16 16" aria-hidden="true"><path d="M9 3h4v4M13 3L7.5 8.5M11.5 9.5V13H3V4.5h3.5"/></svg>';
   const pinIcon = '<svg class="pin" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2h4l-.6 4.2L12 8.5v1H4v-1l2.6-2.3zM8 9.5V14"/></svg>';
+  const notesIcon = '<svg class="notes-svg" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5h5.5L12.5 5.5v8H4z"/><path d="M6 8h4.5M6 10.5h4.5"/></svg>';
+  const searchIcon = '<svg class="search-svg" viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.6" cy="8.6" r="5.2"/><path d="M12.6 12.6l4.4 4.4"/></svg>';
   const lockIcon = '<svg class="lock" viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.2"/><path d="M5.5 7V5.3a2.5 2.5 0 0 1 5 0V7"/></svg>';
   const heart = (on) => `<svg class="heart ${on ? 'on' : ''}" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 16.4s-6.2-3.7-6.2-8.2A3.3 3.3 0 0 1 10 6.3a3.3 3.3 0 0 1 6.2 1.9c0 4.5-6.2 8.2-6.2 8.2z"/></svg>`;
 
@@ -1729,6 +1782,11 @@
       html += `<a class="quiet-row" href="#/hotseat"><span class="q-k">Hot seat</span>
         <span class="q-v">${hs ? `${esc(youOr(hs))}, ${esc(nmLabel)}<span class="q-sub">${hasPrep(nm) ? esc(nm.hotSeatPrep.problem) : 'Prep not in yet'}</span>` : 'No one assigned yet'}</span>${chev}</a>`;
     }
+    if (lm && unseenNotes(lm)) {
+      const ln = notesFor(lm.id);
+      html += `<a class="quiet-row notes-nudge" href="#/meetings/${esc(lm.id)}/notes" id="notes-nudge"><span class="q-k">Notes</span>
+        <span class="q-v">Notes from ${esc(lm.title)}<span class="q-sub">${esc(noteTeaser(ln.find((n) => n.source === 'zoom') || ln[0]))}</span></span>${chev}</a>`;
+    }
     const fresh = newAnnouncements().sort((a, b) => ts(b.createdAt) - ts(a.createdAt));
     if (fresh.length) {
       html += `<a class="quiet-row" href="#/group/announcements"><span class="q-k">News</span>
@@ -1819,18 +1877,25 @@
   function meetingRow(m, isNext) {
     const d = new Date(m.datetime);
     const hs = m.hotSeatMemberId;
-    return `<a class="row meeting-row ${isPast(m) ? 'is-past' : ''}" href="#/meetings/${esc(m.id)}">
+    const noted = notesFor(m.id).length > 0;
+    return `<a class="row meeting-row ${isPast(m) ? 'is-past' : ''}" href="#/meetings/${esc(m.id)}" data-mid="${esc(m.id)}">
       <span class="date-chip" aria-hidden="true"><span>${esc(fmtMonth.format(d))}</span><b>${esc(fmtDay.format(d))}</b></span>
       <span class="row-main">
         <span class="row-title">${esc(m.title)}${isNext ? '<span class="next-tag">Next</span>' : ''}</span>
         <span class="row-sub">${esc(fmtDateShort.format(d))}, ${esc(fmtTime.format(d))}${hs ? `. Hot seat: ${esc(isMe(hs) ? 'you' : firstName(hs))}` : ''}</span>
+        ${noted ? `<span class="notes-mark">${notesIcon}Notes</span><span class="row-snip" hidden></span>` : ''}
       </span>${chev}</a>`;
   }
 
   function renderMeetings() {
     const upcoming = state.meetings.filter((m) => !isPast(m));
     const past = state.meetings.filter(isPast).reverse();
+    const unfiled = isAdmin() ? unfiledZoomNotes() : [];
     let html = `${pageHead('Meetings', 'Once a month. All times Central.')}
+      ${unfiled.length ? `<div class="rows unfiled-notes">${unfiled.map((n) => `<button class="row" data-file-notes="${esc(n.id)}">
+        <span class="loc-badge" aria-hidden="true">${videoIcon}</span>
+        <span class="row-main"><span class="row-title">Zoom notes to file</span>
+          <span class="row-sub">${esc((n.zoom && n.zoom.topic) || 'Zoom call')}${n.zoom && n.zoom.startAt ? `, ${esc(fmtDateShort.format(new Date(n.zoom.startAt)))}` : ''}. Didn't match a meeting.</span></span>${chev}</button>`).join('')}</div>` : ''}
       <h2 class="sec">Upcoming</h2>
       ${upcoming.length ? `<div class="rows">${upcoming.map((m, i) => meetingRow(m, i === 0)).join('')}</div>` : empty('No upcoming meetings yet.')}`;
     const gts = upcomingGTs().slice(0, 4);
@@ -1842,11 +1907,25 @@
           <span class="lite-main"><span class="lite-title">${esc(e.title)}${e.visibility === 'closed' ? lockIcon : ''}</span>
           <span class="row-sub">${esc(fmtWeekday.format(d))} ${esc(fmtTime.format(d))}. ${esc(isMe(e.hostId) ? 'You host' : `${firstName(e.hostId)} hosts`)}, ${goingCount(e)} going</span></span>${chev}</a></li>`;
       }).join('')}</ul>` : '<p class="soon-line">Nothing planned between meetings. Coffee counts.</p>'}`;
-    if (past.length) html += `<h2 class="sec">Past</h2><div class="rows">${past.map((m) => meetingRow(m, false)).join('')}</div>`;
+    const searchable = past.some((m) => notesFor(m.id).length);
+    if (past.length) {
+      html += `<h2 class="sec">Past</h2>
+        ${searchable ? `<label class="notes-search">${searchIcon}<input id="notes-q" type="search" placeholder="Search notes" aria-label="Search meeting notes"
+          autocomplete="off" enterkeyhint="search" maxlength="80" value="${esc(state.notesQuery)}"></label>
+          <p class="search-count" id="notes-count" role="status" hidden></p>` : ''}
+        <div class="rows" id="past-rows">${past.map((m) => meetingRow(m, false)).join('')}</div>`;
+    }
     setView(html, 'meetings');
+    $$('[data-file-notes]').forEach((b) => b.addEventListener('click', () => fileZoomNotes(state.notes.find((n) => n.id === b.dataset.fileNotes))));
+    const q = $('#notes-q');
+    if (q) {
+      q.addEventListener('input', () => { state.notesQuery = q.value; applyNotesSearch(); });
+      q.addEventListener('keydown', (e) => { if (e.key === 'Enter') q.blur(); });
+      applyNotesSearch();
+    }
   }
 
-  function renderMeetingDetail(id) {
+  function renderMeetingDetail(id, opts = {}) {
     const m = state.meetings.find((x) => x.id === id);
     if (!m) return location.replace('#/meetings');
     const start = new Date(m.datetime);
@@ -1916,9 +1995,14 @@
           <span class="what">${esc(r.item)}<span class="who">${esc(memberName(r.owner))}, ${esc(r.time)} min</span></span></li>`).join('')}
         <li class="end"><span class="t">${esc(fmtTime.format(end))}</span><span class="what">End</span></li>
       </ol>` : empty('No agenda yet.', isAdmin() ? `<button class="btn btn-ghost btn-sm" data-edit-agenda="${esc(m.id)}">Add agenda items</button>` : '')}
-      <h2 class="sec">Notes</h2>
-      <p class="soon-line">Shared meeting notes are coming soon.</p>`;
+      ${showNotesFor(m) ? notesSectionHTML(m) : ''}`;
     setView(html, 'meetings');
+    if (showNotesFor(m)) {
+      markNotesSeen(m.id);
+      bindNotes(m);
+      // #/meetings/<id>/notes (Home line, "Notes are in" notification): open at the notes.
+      if (opts.toNotes) setTimeout(() => { const el = $('#notes'); if (el) el.scrollIntoView({ block: 'start' }); }, 0);
+    }
 
     const ics = $('#ics-btn');
     if (ics) ics.addEventListener('click', () => { downloadICS(m); toast('Calendar file downloaded'); });
@@ -1954,6 +2038,316 @@
     }).join('')}</div>` : empty('No check-ins yet. They show up here as people submit them.');
     setView(html, 'meetings');
     bindCommon();
+  }
+
+  /* ---------- Meeting notes ----------
+     state.notes: one manual note (an admin writes it) and one Zoom AI Companion note per
+     meeting. A Zoom note with no meetingId didn't match a meeting; only admins get those. */
+  const noteText = (n) => n.text || [n.title, n.summary].concat(n.keyPoints || [], (n.nextSteps || []).map((x) => x.text)).join('\n');
+  const notesFor = (meetingId) => state.notes.filter((n) => n.meetingId === meetingId)
+    .sort((a, b) => (a.source === b.source ? ts(a.createdAt) - ts(b.createdAt) : a.source === 'manual' ? -1 : 1));
+  const unfiledZoomNotes = () => state.notes.filter((n) => !n.meetingId && n.source === 'zoom');
+  const showNotesFor = (m) => isPast(m) || inJoinWindow(m) || notesFor(m.id).length > 0;
+  // "Seen" per meeting on this device, like announcements: the newest note's time when you opened them.
+  const notesSeenKey = () => `notesSeen:${state.me.id}`;
+  const newestNote = (list) => list.reduce((t, n) => Math.max(t, ts(n.createdAt) || 0), 0);
+  function markNotesSeen(meetingId) {
+    const latest = newestNote(notesFor(meetingId));
+    if (!latest) return;
+    const seen = store.get(notesSeenKey(), {}) || {};
+    if (!seen[meetingId] || ts(seen[meetingId]) < latest) { seen[meetingId] = new Date(latest).toISOString(); store.set(notesSeenKey(), seen); }
+  }
+  function unseenNotes(m) {
+    const latest = m ? newestNote(notesFor(m.id)) : 0;
+    if (!latest) return false;
+    const seen = (store.get(notesSeenKey(), {}) || {})[m.id];
+    return !seen || latest > ts(seen);
+  }
+  const plainLine = (s) => String(s || '').replace(/\*\*/g, '').replace(/^\s*(?:#{1,4}|[-*•]|\d+[.)])\s+/, '').trim();
+  function noteTeaser(n) {
+    const line = String(n.summary || '').split('\n').map(plainLine).find(Boolean);
+    return line || plainLine(n.keyPoints[0]) || plainLine((n.nextSteps[0] || {}).text) || n.title;
+  }
+
+  // Markdown-ish: paragraphs, "- " / "1. " lists, "### " headings, **bold**. Everything escaped first.
+  const inlineMd = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  function mdLite(text) {
+    let html = '';
+    let para = [];
+    let list = null;
+    const flushP = () => { if (para.length) { html += `<p>${para.map(inlineMd).join('<br>')}</p>`; para = []; } };
+    const flushL = () => { if (list) { html += `<${list.tag}>${list.items.map((i) => `<li>${inlineMd(i)}</li>`).join('')}</${list.tag}>`; list = null; } };
+    String(text || '').replace(/\r/g, '').split('\n').forEach((raw) => {
+      const line = raw.trim();
+      let mm;
+      if (!line) { flushP(); flushL(); return; }
+      if ((mm = line.match(/^#{1,4}\s+(.+)$/))) { flushP(); flushL(); html += `<h4>${inlineMd(mm[1])}</h4>`; return; }
+      const bullet = line.match(/^[-*•]\s+(.+)$/);
+      const num = line.match(/^\d+[.)]\s+(.+)$/);
+      if (bullet || num) {
+        const tag = bullet ? 'ul' : 'ol';
+        flushP();
+        if (!list || list.tag !== tag) { flushL(); list = { tag, items: [] }; }
+        list.items.push((bullet || num)[1]);
+        return;
+      }
+      flushL();
+      para.push(line);
+    });
+    flushP(); flushL();
+    return html;
+  }
+
+  const myCommitmentFor = (meetingId) => state.commitments.find((c) => c.meetingId === meetingId && isMe(c.memberId));
+  function stepHTML(n, s, i, m) {
+    const mine = myCommitmentFor(m.id);
+    const already = mine && plainLine(mine.text) === plainLine(s.text);
+    const forMe = !s.memberId || isMe(s.memberId);
+    const who = s.memberId ? `${avatar(s.memberId, 'sm')}<span>${esc(youOr(s.memberId))}</span>` : '<span class="step-anyone">Anyone</span>';
+    return `<li class="note-step ${s.memberId && isMe(s.memberId) ? 'mine' : ''}">
+      <span class="step-text">${inlineMd(s.text)}</span>
+      <span class="step-foot"><span class="step-who">${who}</span>
+        ${isAdmin() ? `<button class="link-btn" data-step-assign="${esc(n.id)}|${i}">Assign</button>` : ''}
+        ${already ? `<span class="step-done">${mark('done')}Your commitment</span>`
+          : forMe ? `<button class="btn btn-ghost btn-sm step-commit" data-step-commit="${esc(n.id)}|${i}">Make this my commitment</button>` : ''}
+      </span></li>`;
+  }
+  function noteCardHTML(n, m) {
+    const zoom = n.source === 'zoom';
+    const edited = n.editedBy && (zoom || n.editedBy !== n.createdBy) ? `Edited by ${isMe(n.editedBy) ? 'you' : firstName(n.editedBy)}` : '';
+    const by = zoom ? edited : [n.createdBy ? `By ${isMe(n.createdBy) ? 'you' : firstName(n.createdBy)}` : '', edited.toLowerCase()].filter(Boolean).join(', ');
+    return `<article class="note-card ${zoom ? 'is-zoom' : ''}" id="note-${esc(n.id)}">
+      ${zoom ? `<p class="zoom-label">${videoIcon}From Zoom AI Companion</p>` : ''}
+      <header class="note-head"><h3 class="note-title">${esc(n.title || `${m.title} notes`)}</h3>
+        ${isAdmin() ? `<button class="link-btn" data-edit-notes="${esc(n.id)}">Edit</button>` : ''}</header>
+      ${by ? `<p class="note-meta">${esc(by.charAt(0).toUpperCase() + by.slice(1))}</p>` : ''}
+      ${n.summary ? `<div class="note-summary">${mdLite(n.summary)}</div>` : ''}
+      ${n.keyPoints.length ? `<h4 class="note-label">Key points</h4><ul class="note-points">${n.keyPoints.map((k) => `<li>${inlineMd(k)}</li>`).join('')}</ul>` : ''}
+      ${n.nextSteps.length ? `<h4 class="note-label">Next steps</h4><ol class="note-steps">${n.nextSteps.map((s, i) => stepHTML(n, s, i, m)).join('')}</ol>` : ''}
+    </article>`;
+  }
+  function notesSectionHTML(m) {
+    const list = notesFor(m.id);
+    const addBtn = `<button class="sec-action" data-add-notes="${esc(m.id)}">Add notes</button>`;
+    const hasManual = list.some((n) => n.source === 'manual');
+    let html = `<h2 class="sec" id="notes">Notes${isAdmin() && list.length && !hasManual ? addBtn : ''}</h2>`;
+    if (list.length) return `${html}<div class="notes">${list.map((n) => noteCardHTML(n, m)).join('')}</div>`;
+    const zoomCall = meetingLocation(m).type === 'zoom';
+    const later = !isPast(m) ? 'Notes show up here after the meeting.'
+      : zoomCall ? "No notes yet. Zoom's meeting summary shows up here a few minutes after the call."
+        : isAdmin() ? 'No notes yet.' : 'No notes yet. Your admin adds them after the meeting.';
+    return html + (isAdmin() ? empty(later, `<button class="btn btn-ghost btn-sm" data-add-notes="${esc(m.id)}">Add notes</button>`)
+      : `<p class="soon-line">${esc(later)}</p>`);
+  }
+  const noteAndStep = (v) => { const k = v.lastIndexOf('|'); const n = state.notes.find((x) => x.id === v.slice(0, k)); return { n, i: +v.slice(k + 1) }; };
+  function bindNotes(m) {
+    $$('[data-add-notes]').forEach((b) => b.addEventListener('click', () => editNotes(m.id, null)));
+    $$('[data-edit-notes]').forEach((b) => b.addEventListener('click', () => editNotes(m.id, state.notes.find((n) => n.id === b.dataset.editNotes))));
+    $$('[data-step-commit]').forEach((b) => b.addEventListener('click', () => {
+      const { n, i } = noteAndStep(b.dataset.stepCommit);
+      if (n && n.nextSteps[i]) commitFromStep(m.id, n.nextSteps[i].text);
+    }));
+    $$('[data-step-assign]').forEach((b) => b.addEventListener('click', () => {
+      const { n, i } = noteAndStep(b.dataset.stepAssign);
+      if (n && n.nextSteps[i]) assignStep(n, i);
+    }));
+  }
+
+  // Next step -> the commitment sheet for that meeting, text filled in.
+  function commitFromStep(meetingId, text) {
+    const c = myCommitmentFor(meetingId)
+      || { memberId: state.me.id, meetingId, text: '', status: 'not_started', goalId: null, lastUpdateNote: '' };
+    editCommitment(c, { prefill: plainLine(text).slice(0, 500) });
+  }
+
+  function assignStep(n, i) {
+    const s = n.nextSteps[i];
+    let pick = s.memberId || '';
+    openSheet(`
+      <h2>Who's doing this?</h2>
+      <p class="sheet-sub">${inlineMd(s.text)}</p>
+      <div class="pick" role="radiogroup" aria-label="Assign to" id="as-pick">
+        <button type="button" role="radio" aria-checked="${!pick}" data-m="">Anyone</button>
+        ${state.members.map((x) => `<button type="button" role="radio" aria-checked="${pick === x.id}" data-m="${esc(x.id)}">${esc(x.name)}</button>`).join('')}
+      </div>
+      <div class="sheet-actions"><button class="btn btn-ghost" data-cancel>Cancel</button><button class="btn btn-primary" id="as-save">Assign</button></div>`, (sheet) => {
+      $$('#as-pick [data-m]', sheet).forEach((b) => b.addEventListener('click', () => {
+        pick = b.dataset.m;
+        $$('#as-pick [data-m]', sheet).forEach((x) => x.setAttribute('aria-checked', x === b));
+      }));
+      sheet.querySelector('#as-save').addEventListener('click', async () => {
+        const nextSteps = n.nextSteps.map((x, j) => (j === i ? { text: x.text, memberId: pick || null } : x));
+        await api.saveNotes({ id: n.id, nextSteps, editedBy: state.me.id });
+        await refresh();
+        closeSheet();
+        toast(pick ? `Assigned to ${isMe(pick) ? 'you' : firstName(pick)}` : 'Open to anyone');
+        rerender();
+      });
+    });
+  }
+
+  // Admin: add or edit a meeting's notes. A Zoom note keeps its title; its original stays on the server.
+  function editNotes(meetingId, note) {
+    const m = state.meetings.find((x) => x.id === meetingId);
+    const zoom = !!(note && note.source === 'zoom');
+    const steps = (note ? note.nextSteps : []).map((x) => ({ text: x.text, memberId: x.memberId || null }));
+    if (!steps.length) steps.push({ text: '', memberId: null });
+    const memberOptions = (sel) => ['<option value="">Anyone</option>']
+      .concat(state.members.map((x) => `<option value="${esc(x.id)}" ${sel === x.id ? 'selected' : ''}>${esc(x.name)}</option>`)).join('');
+    const drawSteps = (sheet, focus) => {
+      sheet.querySelector('#nt-steps').innerHTML = steps.map((st, i) => `<div class="step-edit" data-i="${i}">
+        <input data-f="text" value="${esc(st.text)}" maxlength="300" placeholder="Next step" aria-label="Next step ${i + 1}" enterkeyhint="next">
+        <div class="step-edit-row"><select data-f="memberId" aria-label="Who does next step ${i + 1}">${memberOptions(st.memberId)}</select>
+          <button type="button" class="icon-btn danger" data-remove aria-label="Remove next step ${i + 1}"><svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
+      </div>`).join('');
+      if (focus != null) { const el = $$('#nt-steps [data-f="text"]', sheet)[focus]; if (el) el.focus(); }
+    };
+    openSheet(`
+      <h2>${note ? (zoom ? 'Edit Zoom notes' : 'Edit notes') : 'Add notes'}</h2>
+      <p class="sheet-sub">${esc(m ? m.title : 'Meeting')}. ${zoom ? 'Your changes show instead of what Zoom wrote. Zoom\'s original is kept.' : 'Everyone in the group can read these.'}</p>
+      ${zoom ? `<p class="zoom-label">${videoIcon}From Zoom AI Companion</p>`
+        : `<div class="field"><label for="nt-title">Title</label><input id="nt-title" maxlength="200" value="${esc(note ? note.title : `${m.title} notes`)}"></div>`}
+      <div class="field"><label for="nt-summary">Summary</label>
+        <textarea id="nt-summary" rows="6" maxlength="30000" placeholder="What we talked about. Start a line with - for a bullet.">${esc(note ? note.summary : '')}</textarea></div>
+      <div class="field"><label for="nt-points">Key points <span class="opt">one per line</span></label>
+        <textarea id="nt-points" rows="4" placeholder="One point per line">${esc(note ? note.keyPoints.join('\n') : '')}</textarea></div>
+      <div class="field"><span class="label">Next steps <span class="opt">one per line, and who's doing it</span></span>
+        <div id="nt-steps" class="step-edits"></div>
+        <button type="button" class="btn btn-ghost btn-sm" id="nt-add-step">Add a next step</button></div>
+      ${note ? `<button type="button" class="btn btn-danger btn-sm" id="nt-delete">${zoom ? 'Remove Zoom notes' : 'Delete notes'}</button>` : ''}
+      <div class="sheet-actions"><button class="btn btn-ghost" data-cancel>Cancel</button><button class="btn btn-primary" id="nt-save">Save notes</button></div>`, (sheet) => {
+      drawSteps(sheet);
+      const box = sheet.querySelector('#nt-steps');
+      box.addEventListener('input', (e) => {
+        const row = e.target.closest('[data-i]');
+        if (row && e.target.dataset.f === 'text') steps[+row.dataset.i].text = e.target.value;
+      });
+      box.addEventListener('change', (e) => {
+        const row = e.target.closest('[data-i]');
+        if (row && e.target.dataset.f === 'memberId') steps[+row.dataset.i].memberId = e.target.value || null;
+      });
+      // Pasting several lines makes several steps; Enter starts the next one.
+      box.addEventListener('paste', (e) => {
+        const row = e.target.closest('[data-i]');
+        const text = (e.clipboardData || window.clipboardData || { getData: () => '' }).getData('text');
+        if (!row || e.target.dataset.f !== 'text' || !/\n/.test(text)) return;
+        e.preventDefault();
+        const i = +row.dataset.i;
+        const lines = text.split(/\r?\n/).map(plainLine).filter(Boolean);
+        if (!lines.length) return;
+        steps[i].text = (steps[i].text ? `${steps[i].text} ` : '') + lines[0];
+        steps.splice(i + 1, 0, ...lines.slice(1).map((t) => ({ text: t, memberId: null })));
+        drawSteps(sheet, i + lines.length - 1);
+      });
+      box.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' || e.target.dataset.f !== 'text') return;
+        e.preventDefault();
+        const i = +e.target.closest('[data-i]').dataset.i;
+        steps.splice(i + 1, 0, { text: '', memberId: null });
+        drawSteps(sheet, i + 1);
+      });
+      box.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-remove]');
+        if (!btn) return;
+        steps.splice(+btn.closest('[data-i]').dataset.i, 1);
+        if (!steps.length) steps.push({ text: '', memberId: null });
+        drawSteps(sheet);
+      });
+      sheet.querySelector('#nt-add-step').addEventListener('click', () => { steps.push({ text: '', memberId: null }); drawSteps(sheet, steps.length - 1); });
+      const del = sheet.querySelector('#nt-delete');
+      if (del) del.addEventListener('click', async () => {
+        if (!confirm(zoom ? 'Remove the Zoom notes for this meeting? Everyone loses them.' : 'Delete these notes? Everyone loses them.')) return;
+        await api.deleteNotes(note.id);
+        await refresh();
+        closeSheet();
+        toast(zoom ? 'Zoom notes removed' : 'Notes deleted');
+        rerender();
+      });
+      sheet.querySelector('#nt-save').addEventListener('click', async () => {
+        const summary = sheet.querySelector('#nt-summary').value.trim();
+        const keyPoints = sheet.querySelector('#nt-points').value.split('\n').map(plainLine).filter(Boolean);
+        const nextSteps = steps.map((x) => ({ text: x.text.trim(), memberId: x.memberId || null })).filter((x) => x.text);
+        if (!summary && !keyPoints.length && !nextSteps.length) { toast('Add a summary, a key point or a next step'); return; }
+        const patch = { summary, keyPoints, nextSteps, editedBy: state.me.id };
+        if (!zoom) patch.title = sheet.querySelector('#nt-title').value.trim() || `${m.title} notes`;
+        if (note) patch.id = note.id; else Object.assign(patch, { meetingId, createdBy: state.me.id });
+        await api.saveNotes(patch);
+        await refresh();
+        closeSheet();
+        toast('Notes saved');
+        rerender();
+      });
+    });
+  }
+
+  // Admin: a Zoom summary that matched no meeting on the calendar -> pick the meeting.
+  function fileZoomNotes(n) {
+    const at = n.zoom && n.zoom.startAt ? ts(n.zoom.startAt) : ts(n.createdAt);
+    const taken = (mid) => state.notes.some((x) => x.meetingId === mid && x.source === 'zoom');
+    const near = state.meetings.slice().sort((a, b) => Math.abs(ts(a.datetime) - at) - Math.abs(ts(b.datetime) - at)).slice(0, 6);
+    let pick = (near.find((x) => !taken(x.id)) || {}).id || '';
+    const when = (iso) => `${fmtDateShort.format(new Date(iso))}, ${fmtTime.format(new Date(iso))}`;
+    near.sort((a, b) => ts(a.datetime) - ts(b.datetime));
+    openSheet(`
+      <h2>File Zoom notes</h2>
+      <p class="sheet-sub">${esc((n.zoom && n.zoom.topic) || 'A Zoom call')}${n.zoom && n.zoom.startAt ? `, ${esc(when(n.zoom.startAt))}` : ''}.
+        Zoom's start time wasn't within 6 hours of a meeting on the calendar.</p>
+      <blockquote class="note-preview">${esc(noteTeaser(n))}</blockquote>
+      <div class="field"><span class="label">Which meeting are they from?</span>
+        <div class="pick" role="radiogroup" aria-label="Meeting" id="fz-pick">
+          ${near.map((x) => `<button type="button" role="radio" aria-checked="${pick === x.id}" data-m="${esc(x.id)}" ${taken(x.id) ? 'disabled' : ''}>${esc(x.title)}, ${esc(fmtMD.format(new Date(x.datetime)))}${taken(x.id) ? ' (has Zoom notes)' : ''}</button>`).join('')}
+        </div></div>
+      <button type="button" class="btn btn-danger btn-sm" id="fz-delete">Delete these notes</button>
+      <div class="sheet-actions"><button class="btn btn-ghost" data-cancel>Cancel</button><button class="btn btn-primary" id="fz-save">File notes</button></div>`, (sheet) => {
+      $$('#fz-pick [data-m]', sheet).forEach((b) => b.addEventListener('click', () => {
+        pick = b.dataset.m;
+        $$('#fz-pick [data-m]', sheet).forEach((x) => x.setAttribute('aria-checked', x === b));
+      }));
+      sheet.querySelector('#fz-delete').addEventListener('click', async () => {
+        if (!confirm('Delete these Zoom notes? This can\'t be undone.')) return;
+        await api.deleteNotes(n.id);
+        await refresh();
+        closeSheet();
+        toast('Zoom notes deleted');
+        rerender();
+      });
+      sheet.querySelector('#fz-save').addEventListener('click', async () => {
+        if (!pick) { toast('Pick the meeting'); return; }
+        await api.saveNotes({ id: n.id, meetingId: pick, editedBy: state.me.id });
+        await refresh();
+        closeSheet();
+        toast('Notes filed. The group gets a heads-up.');
+        location.hash = `#/meetings/${pick}/notes`;
+      });
+    });
+  }
+
+  // Meetings tab: filter past meetings by their notes (title, summary, points, steps).
+  function snippetHTML(text, q) {
+    const flat = String(text).replace(/\*\*/g, '').replace(/\s+/g, ' ').trim();
+    const i = flat.toLowerCase().indexOf(q);
+    if (i < 0) return '';
+    const a = Math.max(0, i - 36);
+    const b = Math.min(flat.length, i + q.length + 64);
+    return `${a ? '&hellip;' : ''}${esc(flat.slice(a, i))}<mark>${esc(flat.slice(i, i + q.length))}</mark>${esc(flat.slice(i + q.length, b))}${b < flat.length ? '&hellip;' : ''}`;
+  }
+  function applyNotesSearch() {
+    const q = state.notesQuery.trim().toLowerCase();
+    let shown = 0;
+    $$('#past-rows [data-mid]').forEach((r) => {
+      const m = state.meetings.find((x) => x.id === r.dataset.mid);
+      const text = notesFor(m.id).map(noteText).join('\n');
+      const hit = !q || text.toLowerCase().includes(q) || m.title.toLowerCase().includes(q);
+      r.hidden = !hit;
+      if (hit) shown++;
+      const sn = r.querySelector('.row-snip');
+      if (sn) { const h = q && hit ? snippetHTML(text, q) : ''; sn.innerHTML = h; sn.hidden = !h; }
+    });
+    const c = $('#notes-count');
+    if (c) {
+      c.hidden = !q;
+      c.textContent = !q ? '' : shown ? `${plural(shown, 'meeting')} mention “${state.notesQuery.trim()}”` : `No notes mention “${state.notesQuery.trim()}”`;
+    }
   }
 
   function editAgenda(meetingId) {
@@ -2131,9 +2525,15 @@
     bindCommon();
   }
 
-  function editCommitment(c) {
+  // c without an id = a new commitment for c.meetingId (from a meeting's next step).
+  // opts.prefill: text to start with instead of the saved text.
+  function editCommitment(c, opts = {}) {
     if (!c) return;
     const mine = isMe(c.memberId);
+    const isNew = !c.id;
+    const text0 = opts.prefill != null ? opts.prefill : c.text;
+    const mt = state.meetings.find((x) => x.id === c.meetingId);
+    const replacing = !isNew && opts.prefill != null && opts.prefill.trim() !== c.text.trim();
     let status = c.status;
     let goalId = c.goalId || '';
     const goals = myGoals(c.memberId).filter((g) => g.status !== 'done' || g.id === c.goalId);
@@ -2143,8 +2543,9 @@
       </div>` : `<p class="field-help">${mine ? 'Add a goal in Track to link commitments to it.' : 'No goals set yet.'}</p>`;
     openSheet(`
       <h2>${mine ? 'Your commitment' : esc(`${firstName(c.memberId)}'s commitment`)}</h2>
-      <p class="sheet-sub">${mine ? 'Keep the group posted.' : 'Editing as admin.'}</p>
-      <div class="field"><label for="c-text">Commitment</label><textarea id="c-text" rows="3" maxlength="280">${esc(c.text)}</textarea></div>
+      <p class="sheet-sub">${isNew ? `For ${esc(mt ? mt.title : 'this meeting')}. The group sees it in Track.`
+        : replacing ? `This replaces &ldquo;${esc(c.text)}&rdquo;.` : mine ? 'Keep the group posted.' : 'Editing as admin.'}</p>
+      <div class="field"><label for="c-text">Commitment</label><textarea id="c-text" rows="3" maxlength="280">${esc(text0)}</textarea></div>
       <div class="field"><span class="label">Status</span>
         <div class="segmented" id="c-status" role="radiogroup" aria-label="Status">
           ${Object.keys(STATUS).map((s) => `<button type="button" role="radio" aria-checked="${status === s}" class="seg-${s} ${status === s ? 'on' : ''}" data-s="${s}">${mark(s)}${STATUS[s]}</button>`).join('')}
@@ -2164,7 +2565,9 @@
       sheet.querySelector('#c-save').addEventListener('click', async () => {
         const text = sheet.querySelector('#c-text').value.trim();
         if (!text) { toast('Write the commitment first'); return; }
-        await api.updateCommitment(c.id, { text, status, goalId: goalId || null, lastUpdateNote: sheet.querySelector('#c-note').value.trim() });
+        const lastUpdateNote = sheet.querySelector('#c-note').value.trim();
+        if (isNew) await api.createCommitment({ memberId: c.memberId, meetingId: c.meetingId, text, status, goalId: goalId || null, lastUpdateNote });
+        else await api.updateCommitment(c.id, { text, status, goalId: goalId || null, lastUpdateNote });
         await refresh();
         closeSheet();
         toast('Commitment saved');
@@ -3617,7 +4020,7 @@
         case 'home': return renderHome();
         case 'meetings':
           if (b && c === 'checkins') return renderCheckins(b);
-          if (b) return renderMeetingDetail(b);
+          if (b) return renderMeetingDetail(b, { toNotes: c === 'notes' });
           return renderMeetings();
         case 'track':
           if (b === 'goals') return renderGoals();
@@ -3648,18 +4051,20 @@
     window.scrollTo(0, keepScroll === true ? y : 0);
   }
 
-  const COLLECTIONS = ['members', 'meetings', 'commitments', 'goals', 'checkins', 'asks', 'announcements', 'ideas', 'books', 'readingList', 'gettogethers'];
+  const COLLECTIONS = ['members', 'meetings', 'commitments', 'goals', 'checkins', 'asks', 'announcements', 'ideas', 'books', 'readingList', 'gettogethers', 'notes'];
   /* Loads everything into state. Demo mode: throws on failure (init shows the error).
      Supabase mode: never throws. On failure it keeps what's on screen, or the last
      good copy saved on this device, sets state.offline and returns false. */
   async function loadData() {
     try {
-      const [members, meetings, commitments, goals, checkins, asks, announcements, ideas, books, readingList, gettogethers] = await Promise.all([
+      const [members, meetings, commitments, goals, checkins, asks, announcements, ideas, books, readingList, gettogethers, notes] = await Promise.all([
         baseApi.getMembers(), baseApi.getMeetings(), baseApi.getCommitments(), baseApi.getGoals(), baseApi.getCheckins(), baseApi.getAsks(),
-        baseApi.getAnnouncements(), baseApi.getIdeas(), baseApi.getBooks(), baseApi.getReadingList(), baseApi.getGetTogethers()
+        baseApi.getAnnouncements(), baseApi.getIdeas(), baseApi.getBooks(), baseApi.getReadingList(), baseApi.getGetTogethers(),
+        // Notes never block the app (e.g. the server hasn't got the notes table yet): keep what we have.
+        baseApi.listNotesIndex ? baseApi.listNotesIndex().catch(() => state.notes || []) : Promise.resolve([])
       ]);
       const groupLoc = await baseApi.getGroupLocation();
-      Object.assign(state, { members, meetings, commitments, goals, checkins, asks, announcements, ideas, books, readingList, gettogethers, groupLocation: groupLoc });
+      Object.assign(state, { members, meetings, commitments, goals, checkins, asks, announcements, ideas, books, readingList, gettogethers, notes, groupLocation: groupLoc });
       if (SUPA && baseApi.isSignedIn()) {
         state.offline = false;
         // Last good copy, for opening the app offline. Contact details are never in it.

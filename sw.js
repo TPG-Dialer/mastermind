@@ -1,6 +1,6 @@
 // Service worker: network-first for page/code, cache-first for static assets. Bump VERSION when assets change.
 // Supabase requests go to another origin, so they are never cached here.
-const VERSION = 'mm-v14';
+const VERSION = 'mm-v15';
 const ASSETS = [
   './',
   './index.html',

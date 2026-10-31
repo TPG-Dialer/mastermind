@@ -165,6 +165,15 @@
     trainings: (r) => ({ id: r.id, datetime: toCentral(r.starts_at), durationMinutes: r.duration_minutes, topic: r.topic,
       description: r.description, videoUrl: r.video_url, recordingUrl: r.recording_url,
       rsvps: (r.training_rsvps || []).map((x) => ({ memberId: x.member_id, status: x.status })) }),
+    notes: (r) => {
+      const n = { id: r.id, meetingId: r.meeting_id, source: r.source, title: r.title || '', summary: r.summary || '',
+        keyPoints: r.key_points || [],
+        nextSteps: (r.next_steps || []).map((x) => ({ text: x.text, memberId: x.memberId || null })),
+        createdBy: r.created_by || null, createdAt: r.created_at, updatedAt: r.updated_at,
+        editedBy: r.edited_by || null, editedAt: r.edited_at || null };
+      if (r.source === 'zoom') n.zoom = { topic: r.zoom_topic || '', startAt: r.zoom_start_at ? toCentral(r.zoom_start_at) : null };
+      return n;
+    },
     settings: (r) => r
   };
 
@@ -182,7 +191,9 @@
     readingList: 'reading_list?select=*',
     gettogethers: 'get_togethers?select=*,get_together_invitees(member_id),get_together_rsvps(member_id,status)&order=starts_at.asc',
     trainings: 'trainings?select=*,training_rsvps(member_id,status)&cancelled_at=is.null&order=starts_at.asc',
-    settings: 'group_settings?select=rules,rules_version,location_default,location_override,meeting_rule,training_rule,agenda_template,notification_options'
+    // raw (the Zoom payload) isn't readable by the app; unattached Zoom notes come back for admins only.
+    notes: 'meeting_notes?select=id,meeting_id,source,title,summary,key_points,next_steps,created_by,edited_by,edited_at,created_at,updated_at,zoom_topic,zoom_start_at&order=created_at.asc',
+    settings: 'group_settings?select=rules,rules_version,location_default,location_override,meeting_rule,training_rule,agenda_template,notification_options,zoom_meeting_id'
   };
   // Realtime/polling table name -> cached collection.
   const TABLE_TO_COLL = {
@@ -190,7 +201,8 @@
     trainings: 'trainings', training_rsvps: 'trainings', get_togethers: 'gettogethers', get_together_invitees: 'gettogethers',
     get_together_rsvps: 'gettogethers', goals: 'goals', commitments: 'commitments', checkins: 'checkins', asks: 'asks',
     ask_replies: 'asks', announcements: 'announcements', announcement_comments: 'announcements', ideas: 'ideas',
-    idea_likes: 'ideas', idea_comments: 'ideas', books: 'books', book_comments: 'books', reading_list: 'readingList'
+    idea_likes: 'ideas', idea_comments: 'ideas', books: 'books', book_comments: 'books', reading_list: 'readingList',
+    meeting_notes: 'notes'
   };
 
   /* ---------- Cache ---------- */
@@ -657,6 +669,35 @@
       });
     },
 
+    /* Meeting notes: one manual note (admins write it) and one Zoom AI Companion note per meeting.
+       Shape: { id, meetingId, source: 'manual'|'zoom', title, summary, keyPoints: [string],
+                nextSteps: [{ text, memberId|null }], createdBy, createdAt, updatedAt, editedBy, editedAt,
+                zoom?: { topic, startAt } }.  meetingId is null for a Zoom note that matched no meeting (admins only). */
+    async getNotes(meetingId) { return (await get('notes')).filter((n) => n.meetingId === meetingId); },
+    // Every note the caller can see, each with `text` (title, summary, points and steps) for search.
+    async listNotesIndex() { return (await get('notes')).map((n) => Object.assign(n, { text: noteText(n) })); },
+    // New manual note: { meetingId, title, summary, keyPoints, nextSteps }. Edit: { id, ...fields to change }.
+    // A Zoom note keeps its title (the server refuses a change); meetingId files an unattached one.
+    async saveNotes(note) {
+      const body = {};
+      if ('title' in note) body.title = note.title || '';
+      if ('summary' in note) body.summary = note.summary || '';
+      if ('keyPoints' in note) body.key_points = (note.keyPoints || []).filter(Boolean);
+      if ('nextSteps' in note) body.next_steps = (note.nextSteps || []).filter((x) => x && x.text)
+        .map((x) => (x.memberId ? { text: x.text, memberId: x.memberId } : { text: x.text }));
+      if ('meetingId' in note && note.id) body.meeting_id = note.meetingId;
+      const id = note.id || uid('nt');
+      return mutate({
+        colls: ['notes'],
+        send: () => (note.id ? rest('PATCH', `meeting_notes?id=eq.${enc(id)}`, { body, prefer: RETURN })
+          : rest('POST', 'meeting_notes', { body: Object.assign({ id, meeting_id: note.meetingId }, body), prefer: RETURN })),
+        result: () => findIn('notes', id)
+      });
+    },
+    async deleteNotes(id) {
+      return mutate({ colls: ['notes'], send: () => rest('DELETE', `meeting_notes?id=eq.${enc(id)}`), result: () => true });
+    },
+
     /* Group's usual meeting place: the admin's override, or null for the config default. */
     async getGroupLocation() {
       if (!session.token()) return null;
@@ -843,6 +884,11 @@
     on(name, cb) { const h = (e) => cb(e.detail); window.addEventListener(`mastermind:${name}`, h); return () => window.removeEventListener(`mastermind:${name}`, h); },
     get realtimeConnected() { return realtime.connected; }
   };
+
+  // Search text for a note (same in app.js's demo layer).
+  function noteText(n) {
+    return [n.title, n.summary].concat(n.keyPoints || [], (n.nextSteps || []).map((x) => x.text)).join('\n');
+  }
 
   // Comments share one shape everywhere: { memberId, text, createdAt }.
   async function addComment(coll, table, fk, id, memberId, text) {

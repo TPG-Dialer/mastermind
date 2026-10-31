@@ -41,7 +41,7 @@ Pick the admin to edit agendas, meetings, the hot seat rotation and anyone's com
 Five tabs. Home answers "what do I need to do before the next meeting?"; everything else is one tap away.
 
 - **Home**: reminder line, next meeting (countdown, where, Add to calendar, Agenda, and Join Zoom for Zoom meetings), then a to-do list that empties as you finish: "Going?" (meeting RSVP), check-in, hot seat prep (if it's your turn), action plan (if you had the last hot seat), update your commitment. When nothing is due: "You're all set for Nov 8". Below: your record, open asks, who's on the hot seat, new announcements since you last opened the list, the next get-together, and the group book.
-- **Meetings**: list of meetings, with upcoming get-togethers as a lighter list under them; tap a meeting for where it is (Zoom link with Join and Copy, or the address), RSVP (admin also sees a headcount), agenda, check-ins ("7 of 10 checked in"; admin sees who's missing), hot seat, attendance. Notes are a placeholder.
+- **Meetings**: list of meetings, with upcoming get-togethers as a lighter list under them; tap a meeting for where it is (Zoom link with Join and Copy, or the address), RSVP (admin also sees a headcount), agenda, check-ins ("7 of 10 checked in"; admin sees who's missing), hot seat, attendance, and Notes (see Meeting notes below). Past meetings get a "Search notes" field once any meeting has notes.
 - **Track**: Commitments / Goals / Scoreboard switch at the top.
 - **Hot Seat**: next person and their prep (form if it's you), rotation (admin moves people up/down), past hot seats with action plans.
 - **Group**:
@@ -75,6 +75,17 @@ Where it shows:
 
 Home re-checks every 30 seconds and redraws when the join window opens or closes (not while a sheet is open or you're typing).
 
+## Meeting notes
+
+Past meetings, and the one happening now, have a Notes section in the meeting detail.
+
+- **Admins:** "Add notes" opens a sheet: title (starts as "{Meeting} notes"), summary (paragraphs; start a line with `-` or `1.` for a list, `### ` for a heading, `**bold**`), key points (one per line) and next steps (one per row, each with "Anyone" or a member; Enter or pasting several lines makes more rows). Edit or delete later. "Assign" on any next step picks who's doing it.
+- **Everyone:** reads the notes in the group's style. On a next step assigned to you, or open to anyone, "Make this my commitment" opens the commitment sheet for that meeting with the text filled in (if you already have a commitment for that meeting, the sheet says it replaces it). Once it matches, the step reads "Your commitment".
+- **Zoom AI Companion (The Shoreline):** the summary arrives by itself a few minutes after the call (setup: `supabase/ZOOM.md`) and shows with a small "From Zoom AI Companion" label. Admins can edit its summary, points and steps (not its title); Zoom's original is kept on the server. A summary that doesn't match a meeting waits for admins under Meetings > "Zoom notes to file".
+- **Home:** a quiet "Notes from {last meeting}" line until you open them (remembered on the device, like announcements).
+- **Search:** Meetings > Past > "Search notes" filters past meetings by their notes (title, summary, points, steps) and shows the matching bit.
+- **Meeting location:** pasting the Zoom link shows the meeting ID it found ("Zoom meeting ID 851 2345 6789"); the server saves it as `group_settings.zoom_meeting_id`, which is how Zoom summaries find the group.
+
 ## Switching groups
 
 - Change the URL: `?group=family` or `?group=entrepreneur` (default is family), or set `window.MASTERMIND_GROUP` before `app.js` loads.
@@ -89,7 +100,7 @@ Each group has its own saved login and data on the device.
 - `config/<group>.json` – name, subtitle, tagline, `verse` (short, full, ref), `dedication` (family), `nextLabel` (hero eyebrow), `enterLabel` (invite button), colors (primary, accent, background, text, surface, muted, rule, secondary, good, goodBg), logo (`logoMask` for Flight Club, `logoSvg` for The Shoreline, `logoText` fallback), meeting length, `location` (usual meeting place without the Zoom link, see Meeting location), `sheetId` (unused), `rules` (list of short ground rules). Public on GitHub Pages: no invite codes or private links in here.
 - `data/<group>.json` – sample data, shaped like the future Google Sheet tabs (see below).
 - `manifest.webmanifest` (The Shoreline), `manifest-entrepreneur.webmanifest` (Flight Club) – home-screen install info per group.
-- `sw.js` – offline cache (app files only; Supabase calls are never cached by it), plus web push: shows `{ title, body, url }` from `send-notifications` and opens `url` when tapped. Bump `VERSION` in it when files change (now `mm-v14`).
+- `sw.js` – offline cache (app files only; Supabase calls are never cached by it), plus web push: shows `{ title, body, url }` from `send-notifications` and opens `url` when tapped. Bump `VERSION` in it when files change (now `mm-v15`).
 
 ## Maker credit
 
@@ -148,6 +159,9 @@ meetings:    { id, datetime (ISO, Central offset), title, location? (omit to use
                actionPlan: null | { adviceTaken: [2-5 strings], nextStep, deadline (YYYY-MM-DD), goalId|null, savedAt },
                attendance: [memberId],  // past meetings only
                rsvps: [{ memberId, status: "yes"|"no"|"maybe" }] }
+notes:       { id, meetingId (null: an unfiled Zoom note, admins only), source: "manual"|"zoom", title, summary,
+               keyPoints: [string], nextSteps: [{ text, memberId|null }], createdBy, createdAt, editedBy, editedAt,
+               zoom?: { topic, startAt } }   // one manual + one Zoom note per meeting
 commitments: { id, memberId, meetingId, text, status: "not_started"|"in_progress"|"done",
                updatedAt, doneAt?, lastUpdateNote, goalId|null }
 goals:       { id, memberId, period ("Q4 2026", "2027"), title, why, targetDate (YYYY-MM-DD),
@@ -193,7 +207,7 @@ Rules the app applies:
 
 All data access goes through `api` in `app.js`. Each method returns a Promise. `api` is `window.MASTERMIND_API` (Supabase) when it's set, else the built-in demo layer (`baseApi`), wrapped so any failed call shows a toast and leaves the screen as it was (the handler stops; open sheets stay open). Login and the first load use `baseApi` directly and show their own errors. Methods:
 
-`getConfig, getMembers, updateMember, getMeetings, updateMeeting (patch `location: null` clears a meeting's own location), getGroupLocation, setGroupLocation, setMeetingRsvp, swapHotSeat, saveHotSeatPrep, saveActionPlan, getCommitments, updateCommitment, createCommitment, getGoals, saveGoal, getCheckins, saveCheckin, getAsks, createAsk, replyToAsk, updateAsk, setAskNeeds, getAnnouncements, createAnnouncement, updateAnnouncement, commentOnAnnouncement, getIdeas, createIdea, toggleIdeaLike, commentOnIdea, getBooks, createBook, setGroupBook, commentOnBook, getReadingList, setReadingStatus, getGetTogethers, saveGetTogether, rsvpGetTogether, cancelGetTogether, resetDemo`
+`getConfig, getMembers, updateMember, getMeetings, getNotes, listNotesIndex, saveNotes, deleteNotes, updateMeeting (patch `location: null` clears a meeting's own location), getGroupLocation, setGroupLocation, setMeetingRsvp, swapHotSeat, saveHotSeatPrep, saveActionPlan, getCommitments, updateCommitment, createCommitment, getGoals, saveGoal, getCheckins, saveCheckin, getAsks, createAsk, replyToAsk, updateAsk, setAskNeeds, getAnnouncements, createAnnouncement, updateAnnouncement, commentOnAnnouncement, getIdeas, createIdea, toggleIdeaLike, commentOnIdea, getBooks, createBook, setGroupBook, commentOnBook, getReadingList, setReadingStatus, getGetTogethers, saveGetTogether, rsvpGetTogether, cancelGetTogether, resetDemo`
 
 Supabase adds: `verifyInvite, requestCode, verifyCode, join (first-admin setup only), signOut, getSession, isSignedIn, acceptRules, getMyContact, updateMyContact, getNotificationPrefs, updateNotificationPrefs, updateMyProfile, getContacts, adminSaveContact, addMember, removeMember, restoreMember, adminUpdateMember, rotateInviteCode`, trainings, attendance and push. The screens check `api.backend === 'supabase'` before using them.
 
