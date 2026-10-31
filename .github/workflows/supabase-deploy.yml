@@ -99,7 +99,6 @@ jobs:
             ZOOM_CLIENT_SECRET="$(printf '%s' "$ZOOM_CLIENT_SECRET" | tr -d '[:space:]')" \
             EMAIL_FROM_DOMAIN=tpgmn.com \
             "EMAIL_FROM=Mastermind <reminders@tpgmn.com>" \
-            DEV_SHOW_CODES=true \
             APP_URL="$APP_URL" \
             APP_URL_FAMILY="https://shoreline.tpgmn.com/" \
             APP_URL_ENTREPRENEUR="https://flightclub.tpgmn.com/" \
@@ -121,3 +120,6 @@ jobs:
           pathlib.Path('body.md').write_text(body)
           PY
           gh issue create --title "Supabase deploy failed (run $GITHUB_RUN_NUMBER)" --body-file body.md || true
+
+      - name: Turn off test mode (codes only by email/SMS)
+        run: supabase secrets unset --project-ref "$SUPABASE_PROJECT_REF" DEV_SHOW_CODES || true
