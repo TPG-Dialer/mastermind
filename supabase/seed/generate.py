@@ -10,7 +10,8 @@ database test data in sync with them. Re-running seed.sql WIPES both groups
 project or before real members join.
 
 Things not in the JSON that the backend needs are set here, in GROUP_EXTRAS:
-meeting rule, training rule, one-hour reminder flag.
+meeting rule, training rule, one-hour reminder flag, and the demo invite code
+and Zoom link (no longer in config/*.json, which is public on GitHub Pages).
 """
 import json
 import pathlib
@@ -30,6 +31,8 @@ GROUP_EXTRAS = {
                          "titleTemplate": "{month} Shoreline"},
         "training_rule": None,
         "notification_options": {"oneHourReminder": True},
+        "demo_invite_code": "FAMILY2026",
+        "demo_zoom_url": "https://zoom.us/j/0000000000?pwd=PLACEHOLDER",
     },
     "entrepreneur": {
         "meeting_rule": {"nth": 3, "weekday": 5, "start": "07:00", "durationMinutes": 120,
@@ -37,6 +40,8 @@ GROUP_EXTRAS = {
         "training_rule": {"nth": 3, "weekday": 3, "start": "12:00", "durationMinutes": 60,
                           "titleTemplate": "{month} Training"},
         "notification_options": {"oneHourReminder": False},
+        "demo_invite_code": "FOUNDERS2026",
+        "demo_zoom_url": None,
     },
 }
 
@@ -121,13 +126,16 @@ def build_group(g, seen_ids):
                                q("America/Chicago")]],
                    ["id", "name", "subtitle", "tagline", "timezone"]))
     branding = {k: v for k, v in cfg.items() if k not in BRANDING_SKIP}
+    location = dict(cfg["location"])
+    if location.get("type") == "zoom" and not location.get("url"):
+        location["url"] = ex["demo_zoom_url"]
     out.append(ins("group_settings", [[
         q(g), j(branding), j(cfg.get("verse", {})), j(cfg.get("credit", {})), j(cfg.get("rules", [])), "1",
-        j(cfg["location"]), j(ex["meeting_rule"]), j(ex["training_rule"]),
+        j(location), j(ex["meeting_rule"]), j(ex["training_rule"]),
         j(agenda_template(d["meetings"], d["members"])), j(ex["notification_options"])]],
         ["group_id", "branding", "verse", "credit", "rules", "rules_version", "location_default",
          "meeting_rule", "training_rule", "agenda_template", "notification_options"]))
-    code = cfg["inviteCode"].strip().upper()
+    code = (cfg.get("inviteCode") or ex["demo_invite_code"]).strip().upper()
     out.append(f"insert into public.group_invites (group_id, code_hash, code_hint) values "
                f"({q(g)}, public.hash_invite_code({q(g)}, {q(code)}), {q(code[-2:])});\n")
 

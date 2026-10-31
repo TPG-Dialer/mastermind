@@ -51,6 +51,16 @@ jobs:
           sed -e "s#https://YOUR-PROJECT-REF.supabase.co#https://${SUPABASE_PROJECT_REF}.supabase.co#" \
               -e "s#PASTE-THE-SAME-CRON_SECRET-HERE#${CRON_SECRET}#" \
               cron.sql > migrations/20261031000004_cron.sql
+          # Later changes: supabase/migrations_extra/NNNN_name.sql, applied in
+          # NNNN order after the four files above (0005 -> 20261031000005_name.sql).
+          # The four above are already applied on the live project, so any new
+          # SQL must go in a new file here (db push skips versions it has run).
+          shopt -s nullglob
+          for f in migrations_extra/[0-9][0-9][0-9][0-9]_*.sql; do
+            base=$(basename "$f")
+            num=${base%%_*}
+            cp "$f" "migrations/20261031$(printf '%06d' "$((10#$num))")_${base#*_}"
+          done
           ls -la migrations
 
       - name: Link project

@@ -28,10 +28,17 @@
   };
 
   /* ---------- Data layer ----------
-     Prototype: reads JSON from /data and keeps edits in localStorage.
-     Later: replace the bodies with fetch() calls to the Apps Script web app
-     (config.sheetId identifies the sheet). Every method returns a Promise. */
-  const api = (function () {
+     Supabase: api-supabase.js sets window.MASTERMIND_API (same methods, plus login,
+     contacts and admin extras). It stays unset with ?backend=local or without a
+     project in config/supabase.js, and then the demo layer below is used: JSON
+     from /data, edits kept in localStorage. Every method returns a Promise. */
+  // Demo-only values. The real invite codes and Zoom link live in the database,
+  // not in config/*.json (which is public on GitHub Pages).
+  const DEMO = {
+    family: { inviteCode: 'FAMILY2026', zoomUrl: 'https://zoom.us/j/0000000000?pwd=PLACEHOLDER' },
+    entrepreneur: { inviteCode: 'FOUNDERS2026', zoomUrl: null }
+  };
+  const baseApi = (params.get('backend') !== 'local' && window.MASTERMIND_API) || (function () {
     let cache = null;
     const clone = (x) => JSON.parse(JSON.stringify(x));
     const delay = (v) => new Promise((r) => setTimeout(() => r(clone(v)), 40));
@@ -70,7 +77,14 @@
     }
 
     return {
-      getConfig: () => fetchJSON(`config/${GROUP}.json`),
+      backend: 'local',
+      async getConfig() {
+        const cfg = await fetchJSON(`config/${GROUP}.json`);
+        cfg.demoInviteCode = DEMO[GROUP].inviteCode;
+        const loc = cfg.location;
+        if (loc && loc.type === 'zoom' && !loc.url && DEMO[GROUP].zoomUrl) cfg.location = Object.assign({}, loc, { url: DEMO[GROUP].zoomUrl });
+        return cfg;
+      },
       async getMembers() { return delay((await load()).members); },
       async getMeetings() {
         const d = await load();
@@ -335,14 +349,61 @@
       }
     };
   })();
+  const SUPA = baseApi.backend === 'supabase';
+
+  /* Screens call `api` (below). Any rejection shows a toast and is re-thrown as a
+     HandledError, so the handler stops where it is: the sheet stays open, nothing
+     is closed or re-rendered, and the screen keeps its previous state. The
+     unhandledrejection listener in init() swallows HandledErrors.
+     Code that shows its own errors (login, first load) uses baseApi directly. */
+  class HandledError extends Error {
+    constructor(err) { super(err && err.message); this.cause = err; }
+  }
+  function friendlyError(err, reading) {
+    const e = err || {};
+    if (e.code === 'network' || e.status === 0) return "Can't reach the server. Check your connection and try again.";
+    if (e.status === 401 || e.status === 403 || e.code === '42501') return "You don't have permission to do that.";
+    const msg = String(e.message || '').replace(/\.$/, '');
+    return `${reading ? "Couldn't load" : "Couldn't save"}${msg ? `: ${msg}` : ''}`;
+  }
+  let writesInFlight = 0;
+  const api = new Proxy(baseApi, {
+    get(target, key) {
+      const v = target[key];
+      if (typeof v !== 'function') return v;
+      const reading = /^get/.test(String(key));
+      return (...args) => {
+        if (!reading) { writesInFlight++; document.documentElement.classList.add('mm-busy'); }
+        let p;
+        try { p = Promise.resolve(v.apply(target, args)); } catch (e) { p = Promise.reject(e); }
+        return p.then((res) => res, (err) => {
+          if (err instanceof HandledError) throw err;
+          noteError(err);
+          toast(friendlyError(err, reading), 4000);
+          throw new HandledError(err);
+        }).finally(() => {
+          if (!reading && --writesInFlight <= 0) { writesInFlight = 0; document.documentElement.classList.remove('mm-busy'); }
+        });
+      };
+    }
+  });
 
   /* ---------- State ---------- */
   const state = {
     config: null, members: [], meetings: [], commitments: [], goals: [], checkins: [], asks: [],
     announcements: [], ideas: [], books: [], readingList: [], gettogethers: [], groupLocation: null,
     me: null, filter: 'all', editPrep: false, lastPath: null,
-    ideaFilter: 'all', bookFilter: 'all', gtPast: false
+    ideaFilter: 'all', bookFilter: 'all', gtPast: false,
+    // Supabase mode only:
+    session: null,        // get_session_info(): { memberId, role, rulesVersion, rulesAcceptedAt, ... }
+    myContact: null,      // { email, phone } or null when not loaded
+    prefs: null,          // { sms, email, nudges }
+    contacts: null,       // admins: [{ memberId, email, phone }]
+    offline: false,       // last load failed: showing the cached copy
+    pendingRemote: false  // another member changed something while you were mid-edit
   };
+  // A network failure anywhere means we're offline until the next good load.
+  function noteError(err) { if (err && (err.code === 'network' || err.status === 0)) state.offline = true; }
 
   /* ---------- Helpers ---------- */
   const $ = (sel, root = document) => root.querySelector(sel);
@@ -573,12 +634,12 @@
     });
   }
 
-  function toast(msg) {
+  function toast(msg, ms) {
     const el = $('#toast');
     el.textContent = msg;
     el.classList.add('show');
     clearTimeout(toast.t);
-    toast.t = setTimeout(() => el.classList.remove('show'), 2200);
+    toast.t = setTimeout(() => el.classList.remove('show'), ms || 2200);
   }
 
   /* ---------- Small pieces of markup ---------- */
@@ -734,10 +795,13 @@
   const myGTRsvp = (e) => (e.rsvps.find((r) => isMe(r.memberId)) || {}).status;
   const goingCount = (e) => e.rsvps.filter((r) => r.status === 'yes').length;
 
-  // Rules acceptance, per group (store is already group-scoped) and per member.
-  const rulesKey = () => `rules:${state.me.id}`;
+  // Rules acceptance, per group (store is already group-scoped), per member and, with
+  // Supabase, per rules version (the server keeps the record; the device remembers it too).
+  const rulesKey = () => `rules:${state.me.id}${state.config.rulesVersion > 1 ? `:v${state.config.rulesVersion}` : ''}`;
   const hasRules = () => Array.isArray(state.config.rules) && state.config.rules.length > 0;
-  const rulesAccepted = () => !hasRules() || !!store.get(rulesKey(), null);
+  const rulesAccepted = () => !hasRules() || !!store.get(rulesKey(), null)
+    || !!(SUPA && state.session && state.session.memberId === state.me.id && state.session.rulesAcceptedAt
+      && (state.session.rulesVersion || 1) === (state.config.rulesVersion || 1));
 
   /* ---------- Calendar (.ics) ---------- */
   function downloadICS(meeting) {
@@ -813,7 +877,10 @@
     if (!root.innerHTML) return;
     if (immediate === true || reduceMotion()) { root.innerHTML = ''; return; }
     root.classList.add('closing');
-    setTimeout(() => { root.innerHTML = ''; root.classList.remove('closing'); }, 200);
+    setTimeout(() => {
+      root.innerHTML = ''; root.classList.remove('closing');
+      if (state.pendingRemote && state.me) applyRemote();
+    }, 200);
   }
 
   /* ---------- Shell ---------- */
@@ -1058,11 +1125,27 @@
       </div>`, undefined, { gate: true });
     const input = $('#code');
     input.focus();
-    $('#invite-form').addEventListener('submit', (e) => {
+    let busy = false;
+    $('#invite-form').addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (busy) return;
       const code = input.value.trim().toUpperCase();
       if (!code) return renderInvite('Enter the invite code from your invite.');
-      if (code !== String(cfg.inviteCode).toUpperCase()) return renderInvite("That code doesn't match this group. Check your invite and try again.");
+      if (SUPA) {
+        // The server checks the code and returns the roster for "Who are you?".
+        busy = true;
+        const btn = $('#invite-form button[type=submit]');
+        btn.disabled = true;
+        btn.setAttribute('aria-busy', 'true');
+        try {
+          state.members = await baseApi.verifyInvite(code);
+        } catch (err) {
+          return renderInvite(err && (err.code === 'network' || err.status === 0) ? friendlyError(err)
+            : (err && err.message) || "That code doesn't match this group. Check your invite and try again.");
+        }
+        return renderWho();
+      }
+      if (code !== String(cfg.inviteCode || cfg.demoInviteCode || '').toUpperCase()) return renderInvite("That code doesn't match this group. Check your invite and try again.");
       store.set('verified', true);
       renderWho();
     });
@@ -1094,12 +1177,67 @@
         </div>
         ${gateMotif('bottom')}
       </div>`, undefined, { gate: true });
-    $$('[data-member]').forEach((b) => b.addEventListener('click', () => {
-      store.set('user', b.dataset.member);
-      state.me = memberById(b.dataset.member);
+    let busy = false;
+    $$('[data-member]').forEach((b) => b.addEventListener('click', async () => {
+      if (busy) return;
+      const id = b.dataset.member;
+      if (SUPA) {
+        // Creates this device's session, then loads the group as that member.
+        busy = true;
+        $$('[data-member]').forEach((x) => { x.disabled = true; });
+        b.setAttribute('aria-busy', 'true');
+        try {
+          await baseApi.join(id);
+        } catch (err) {
+          busy = false;
+          $$('[data-member]').forEach((x) => { x.disabled = false; });
+          b.removeAttribute('aria-busy');
+          // 401: the code was rotated meanwhile. 400: the code isn't on this device any more (page reloaded).
+          const again = err && (err.status === 401 || err.status === 400);
+          if (again) { store.remove('verified'); return renderInvite('Enter the invite code again to continue.'); }
+          toast(friendlyError(err), 4000);
+          return;
+        }
+        await afterSignIn();
+        if (!state.loaded) { store.set('user', id); return renderLoadError(); }
+      }
+      store.set('user', id);
+      state.me = memberById(id) || state.members.find((m) => m.id === id);
+      if (!state.me) { toast("Couldn't find you on the roster. Try again."); return renderWho(); }
       toast(`Welcome, ${state.me.name.split(' ')[0]}`);
       if (location.hash !== '#/home') location.hash = '#/home'; else route();
     }));
+  }
+
+  // Supabase: right after join, or on start with a saved session. Never throws:
+  // anything that fails here leaves the cached copy (or an error panel with Retry).
+  async function afterSignIn() {
+    try {
+      const cfg = await baseApi.getConfig();
+      if (cfg && cfg.colors) { state.config = cfg; applyBranding(cfg); }
+    } catch (e) { noteError(e); }
+    try { state.session = await baseApi.getSession(); } catch (e) { noteError(e); }
+    await loadData();
+    await loadContact();
+  }
+
+  // Back to the invite screen. With Supabase this ends the session on the server too,
+  // so signing in as someone else needs the code again.
+  async function signOutToInvite() {
+    if (SUPA) {
+      await baseApi.signOut().catch(() => {});
+      clearSignedInState();
+      return route();
+    }
+    store.remove('user');
+    state.me = null;
+    renderWho();
+  }
+  function clearSignedInState() {
+    store.remove('snapshot');
+    store.remove('user');
+    store.remove('verified');
+    Object.assign(state, { me: null, session: null, myContact: null, prefs: null, contacts: null, members: [], offline: false });
   }
 
   // Shown once per member per device, after picking a name.
@@ -1115,12 +1253,26 @@
       ${rulesList()}
       <button class="btn btn-primary btn-block" id="agree">I agree</button>
       <button class="link-btn" id="not-me">Not ${esc(state.me.name.split(' ')[0])}? Pick a different name</button>`);
-    $('#agree').addEventListener('click', () => {
+    let busy = false;
+    $('#agree').addEventListener('click', async () => {
+      if (busy) return;
+      if (SUPA) {
+        busy = true;
+        $('#agree').disabled = true;
+        try {
+          const at = await api.acceptRules(state.config.rulesVersion || 1);
+          if (state.session) state.session.rulesAcceptedAt = at || new Date().toISOString();
+        } catch (e) {
+          busy = false;
+          $('#agree').disabled = false;
+          return; // toast shown; stay on the rules
+        }
+      }
       store.set(rulesKey(), new Date().toISOString());
       toast('Thanks. Welcome in.');
       if (location.hash !== '#/home') location.hash = '#/home'; else route();
     });
-    $('#not-me').addEventListener('click', () => { store.remove('user'); state.me = null; renderWho(); });
+    $('#not-me').addEventListener('click', () => signOutToInvite());
   }
   const rulesList = () => `<ol class="rules-list">${state.config.rules.map((r) => `<li>${esc(r)}</li>`).join('')}</ol>`;
 
@@ -1341,6 +1493,11 @@
     const my = computeScores().find((s) => isMe(s.member.id));
     const openAsks = state.asks.filter((a) => a.status === 'open').sort((a, b) => ts(b.createdAt) - ts(a.createdAt));
     html += '<div class="quiet">';
+    if (SUPA && state.myContact && !contactComplete()) {
+      const miss = missingContact(state.myContact);
+      html += `<a class="quiet-row contact-nudge" href="#/profile" id="contact-nudge"><span class="q-k">Reminders</span>
+        <span class="q-v">Add your ${esc(miss)}<span class="q-sub">So reminders reach you</span></span>${chev}</a>`;
+    }
     if (my && my.total) {
       html += `<a class="quiet-row" href="#/track/score"><span class="q-k">Your record</span>
         <span class="q-v">${my.kept} of ${my.total} commitments kept${my.streak >= 2 ? `<span class="q-sub">${esc(streakText(my.streak))}</span>` : ''}</span>${chev}</a>`;
@@ -1380,6 +1537,8 @@
     });
     const ics = $('#ics-btn');
     if (ics) ics.addEventListener('click', () => { downloadICS(hm); toast('Calendar file downloaded'); });
+    const cn = $('#contact-nudge');
+    if (cn) cn.addEventListener('click', (e) => { e.preventDefault(); editContact(); });
     homeLiveKey = liveKey();
 
     const form = $('#checkin-form');
@@ -2602,13 +2761,32 @@
   }
 
   function renderMembers() {
+    const admin = canAdminRoster();
+    // Admins: a small marker on anyone reminders can't fully reach.
+    const missTag = (m) => {
+      if (!admin || !state.contacts) return '';
+      const miss = missingContact(contactOf(m.id));
+      return miss ? `<span class="miss-tag">No ${esc(miss.replace(' and ', ' or '))}</span>` : '';
+    };
     setView(`${pageHead('Members', `${plural(state.members.length, 'person', 'people')}. Tap anyone to see what they can help with.`, { backHtml: back('#/group', 'Group') })}
       ${teamMap()}
       <h2 class="sec">Everyone<span class="sec-count">${state.members.length}</span></h2>
       <div class="rows">${state.members.map((m) => `<a class="row member-row ${isMe(m.id) ? 'mine' : ''}" href="#/group/members/${esc(m.id)}">${avatar(m.id)}
         <span class="row-main"><span class="row-title">${esc(m.name)}${isMe(m.id) ? ' (you)' : ''}${wgChips(m)}</span>
-          ${m.bio ? `<span class="row-sub clamp1">${esc(m.bio)}</span>` : ''}</span>
-        ${m.role === 'admin' ? '<span class="role-tag">Admin</span>' : ''}${chev}</a>`).join('')}</div>`, 'group');
+          ${m.bio ? `<span class="row-sub clamp1">${esc(m.bio)}</span>` : ''}${missTag(m)}</span>
+        ${m.role === 'admin' ? '<span class="role-tag">Admin</span>' : ''}${chev}</a>`).join('')}</div>
+      ${admin ? `<h2 class="sec">Admin</h2>
+      <div class="rows">
+        <button class="row" id="add-member"><span class="row-main"><span class="row-title">Add a member</span>
+          <span class="row-sub">Name and role. Email and phone are optional</span></span>${chev}</button>
+        <button class="row" id="rotate-code"><span class="row-main"><span class="row-title">New invite code</span>
+          <span class="row-sub">The old one stops working. Shown to you once</span></span>${chev}</button>
+      </div>
+      ${state.contacts ? '' : '<p class="soon-line">Contact details didn\'t load. Check your connection.</p>'}` : ''}`, 'group');
+    const am = $('#add-member');
+    if (am) am.addEventListener('click', addMemberSheet);
+    const rc = $('#rotate-code');
+    if (rc) rc.addEventListener('click', rotateInviteSheet);
   }
 
   function wgLine(label, keys) {
@@ -2632,7 +2810,21 @@
       <h2 class="sec">Working Genius</h2>
       ${wgv ? `<dl class="wg-detail">${wgLine('Genius', wgv.geniuses)}${wgLine('Competency', wgv.competencies)}${wgLine('Frustration', wgv.frustrations)}</dl>`
         : `<p class="soon-line">${mine ? "You haven't added yours yet." : `${esc(m.name.split(' ')[0])} hasn't added results yet.`}</p>`}
-      ${mine ? '<a class="btn btn-ghost btn-sm" href="#/profile">Edit in Profile</a>' : ''}`, 'group');
+      ${mine ? '<a class="btn btn-ghost btn-sm" href="#/profile">Edit in Profile</a>' : ''}
+      ${canAdminRoster() ? (() => {
+        const c = contactOf(m.id);
+        return `<h2 class="sec">Contact<span class="sec-count">Admins only</span></h2>
+      <div class="rows">
+        <button class="row" id="admin-contact"><span class="row-main">
+          <span class="row-title">${c.email ? esc(c.email) : '<span class="miss-tag">No email</span>'}</span>
+          <span class="row-sub">${c.phone ? esc(prettyPhone(c.phone)) : '<span class="miss-tag">No phone</span>'}</span></span>${chev}</button>
+      </div>
+      ${mine ? '' : `<button class="btn btn-danger btn-block" id="remove-member">Remove ${esc(m.name.split(' ')[0])} from the group</button>`}`;
+      })() : ''}`, 'group');
+    const ac = $('#admin-contact');
+    if (ac) ac.addEventListener('click', () => adminEditContact(m));
+    const rm = $('#remove-member');
+    if (rm) rm.addEventListener('click', () => removeMemberSheet(m));
   }
 
   function editAbout() {
@@ -2834,6 +3026,263 @@
     });
   }
 
+  /* ---------- Contact details and reminders (Supabase) ---------- */
+  const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+  // "(512) 555-0123", "512.555.0123", "+1 512 555 0123" -> "+15125550123". '' if blank, null if not a number.
+  function toE164(raw) {
+    const t = String(raw || '').trim();
+    if (!t) return '';
+    const d = t.replace(/\D/g, '');
+    if (t.startsWith('+') && !d.startsWith('1')) return d.length >= 8 && d.length <= 15 ? `+${d}` : null;
+    const ten = d.length === 11 && d[0] === '1' ? d.slice(1) : d;
+    return ten.length === 10 && /^[2-9]/.test(ten) ? `+1${ten}` : null;
+  }
+  const prettyPhone = (e) => (/^\+1\d{10}$/.test(e || '') ? `(${e.slice(2, 5)}) ${e.slice(5, 8)}-${e.slice(8)}` : e || '');
+  function missingContact(c) {
+    const noE = !(c && c.email); const noP = !(c && c.phone);
+    return noE && noP ? 'email and phone' : noE ? 'email' : noP ? 'phone' : '';
+  }
+  const switchRow = (id, title, sub, on) => `<label class="switch-row"><span class="sw-text"><b>${esc(title)}</b>
+      <span class="sw-sub">${esc(sub)}</span></span>
+    <input type="checkbox" role="switch" id="${id}" ${on ? 'checked' : ''}><span class="sw" aria-hidden="true"></span></label>`;
+
+  // Email, mobile, the two reminder switches and (setup only) "What do you do".
+  function contactFieldsHTML({ withBio = false, withPrefs = true } = {}) {
+    const c = state.myContact || {};
+    const prefs = state.prefs || { sms: true, email: true };
+    return `<div class="field"><label for="ct-email">Email</label>
+        <input id="ct-email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" maxlength="120" placeholder="you@example.com" value="${esc(c.email || '')}"></div>
+      <div class="field"><label for="ct-phone">Mobile phone</label>
+        <input id="ct-phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="24" placeholder="(512) 555-0123" value="${esc(prettyPhone(c.phone))}">
+        <p class="field-help">US mobile number. Used only for reminders.</p></div>
+      ${withPrefs ? `${switchRow('ct-sms', 'Text me reminders', 'To your mobile phone', !!c.phone && prefs.sms !== false)}
+      ${switchRow('ct-mail', 'Email me reminders', 'To your email', prefs.email !== false)}
+      <p class="field-help">Meeting reminders still reach you by email or notification if you turn both off.</p>` : ''}
+      ${withBio ? `<div class="field"><label for="ct-bio">What do you do <span class="opt">optional</span></label>
+        <input id="ct-bio" maxlength="140" value="${esc((state.me && state.me.bio) || '')}" placeholder="e.g. Runs a bookkeeping practice for contractors"></div>` : ''}`;
+  }
+  // "Text me" follows the phone field until the person flips it themselves.
+  function bindContactFields(root) {
+    const sms = root.querySelector('#ct-sms');
+    const phone = root.querySelector('#ct-phone');
+    if (!sms || !phone) return;
+    let touched = false;
+    sms.addEventListener('change', () => { touched = true; });
+    phone.addEventListener('input', () => { if (!touched) sms.checked = !!phone.value.trim(); });
+  }
+  // { email, phone, sms, emailOn, bio } or { error } after focusing the field to fix.
+  function readContactFields(root) {
+    const emailEl = root.querySelector('#ct-email');
+    const phoneEl = root.querySelector('#ct-phone');
+    const email = emailEl.value.trim();
+    if (email && !EMAIL_RE.test(email)) { emailEl.focus(); return { error: 'Check the email address' }; }
+    const phone = toE164(phoneEl.value);
+    if (phone === null) { phoneEl.focus(); return { error: 'Enter a 10-digit US mobile number' }; }
+    const sms = root.querySelector('#ct-sms');
+    const mail = root.querySelector('#ct-mail');
+    const bio = root.querySelector('#ct-bio');
+    return { email: email || null, phone: phone || null, sms: sms ? sms.checked && !!phone : null,
+      emailOn: mail ? mail.checked : null, bio: bio ? bio.value.trim() : null };
+  }
+  // Saves your contact row, then your toggles, then (if changed) your bio. Rejects with
+  // a HandledError (toast already shown) if any step fails; earlier steps stay saved.
+  async function saveMyContact(v) {
+    const saved = await api.updateMyContact({ email: v.email, phone: v.phone });
+    state.myContact = { email: saved.email, phone: saved.phone };
+    if (state.contacts) {
+      state.contacts = state.contacts.filter((x) => x.memberId !== state.me.id).concat({ memberId: state.me.id, email: saved.email, phone: saved.phone });
+    }
+    if (v.sms !== null || v.emailOn !== null) {
+      const p = {};
+      if (v.sms !== null) p.sms = v.sms;
+      if (v.emailOn !== null) p.email = v.emailOn;
+      state.prefs = Object.assign({}, state.prefs, await api.updateNotificationPrefs(p));
+    }
+    if (v.bio !== null && v.bio !== (state.me.bio || '')) {
+      await api.updateMyProfile({ bio: v.bio });
+      await refresh();
+    }
+  }
+
+  // First run, after the rules: shown once until saved or skipped (Profile has the same fields).
+  function renderProfileSetup() {
+    showChrome(false);
+    const cfg = state.config;
+    setView(`
+      <div class="onboard onboard-tight">
+        ${cfg.logoSvg ? `<div class="logo-big logo-big-svg">${shorelineLogoSVG(96, 'var(--primary)')}</div>` : `<div class="logo-big" aria-hidden="true">${esc(cfg.logoText)}</div>`}
+        <h1>Set up your profile</h1>
+        <p class="lede">So meeting reminders reach you. Only you and ${esc(cfg.name)}'s admins see your email and phone.</p>
+      </div>
+      <form id="setup-form" class="setup-form" novalidate>
+        ${contactFieldsHTML({ withBio: true })}
+        <button class="btn btn-primary btn-block" type="submit" id="setup-save">Save and continue</button>
+      </form>
+      <button class="link-btn" id="setup-skip">Skip for now</button>`);
+    window.scrollTo(0, 0);
+    const form = $('#setup-form');
+    bindContactFields(form);
+    const done = (how, msg) => {
+      store.set(setupKey(), how);
+      toast(msg);
+      if (location.hash !== '#/home') location.hash = '#/home'; else route();
+    };
+    let busy = false;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (busy) return;
+      const v = readContactFields(form);
+      if (v.error) { toast(v.error); return; }
+      busy = true;
+      $('#setup-save').disabled = true;
+      try { await saveMyContact(v); } catch (err) { busy = false; $('#setup-save').disabled = false; return; }
+      done('saved', 'Profile saved');
+    });
+    $('#setup-skip').addEventListener('click', () => done('skipped', 'You can add these any time in Profile'));
+  }
+
+  // Profile > Email, phone and reminders.
+  function editContact() {
+    openSheet(`
+      <h2>Email, phone and reminders</h2>
+      <p class="sheet-sub">Only you and the group's admins see these.</p>
+      ${contactFieldsHTML()}
+      <div class="sheet-actions"><button class="btn btn-ghost" data-cancel>Cancel</button><button class="btn btn-primary" id="ct-save">Save</button></div>`, (sheet) => {
+      bindContactFields(sheet);
+      let busy = false;
+      sheet.querySelector('#ct-save').addEventListener('click', async () => {
+        if (busy) return;
+        const v = readContactFields(sheet);
+        if (v.error) { toast(v.error); return; }
+        busy = true;
+        try { await saveMyContact(v); } catch (err) { busy = false; return; }
+        store.set(setupKey(), 'saved');
+        closeSheet();
+        toast('Saved');
+        rerender();
+      });
+    });
+  }
+
+  /* ---------- Admin roster tools (Supabase) ---------- */
+  const contactOf = (id) => (state.contacts || []).find((c) => c.memberId === id) || { memberId: id, email: null, phone: null };
+  const canAdminRoster = () => SUPA && isAdmin();
+
+  function adminEditContact(m) {
+    const c = contactOf(m.id);
+    openSheet(`
+      <h2>${esc(m.name.split(' ')[0])}'s contact</h2>
+      <p class="sheet-sub">For reminders. Only admins and ${esc(m.name.split(' ')[0])} see these.</p>
+      <div class="field"><label for="ac-email">Email</label>
+        <input id="ac-email" type="email" inputmode="email" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="120" value="${esc(c.email || '')}"></div>
+      <div class="field"><label for="ac-phone">Mobile phone</label>
+        <input id="ac-phone" type="tel" inputmode="tel" autocomplete="off" maxlength="24" placeholder="(512) 555-0123" value="${esc(prettyPhone(c.phone))}"></div>
+      <div class="sheet-actions"><button class="btn btn-ghost" data-cancel>Cancel</button><button class="btn btn-primary" id="ac-save">Save</button></div>`, (sheet) => {
+      let busy = false;
+      sheet.querySelector('#ac-save').addEventListener('click', async () => {
+        if (busy) return;
+        const emailEl = sheet.querySelector('#ac-email'); const phoneEl = sheet.querySelector('#ac-phone');
+        const email = emailEl.value.trim();
+        if (email && !EMAIL_RE.test(email)) { emailEl.focus(); toast('Check the email address'); return; }
+        const phone = toE164(phoneEl.value);
+        if (phone === null) { phoneEl.focus(); toast('Enter a 10-digit US mobile number'); return; }
+        busy = true;
+        let saved;
+        try { saved = await api.adminSaveContact(m.id, { email: email || null, phone: phone || null }); } catch (e) { busy = false; return; }
+        state.contacts = (state.contacts || []).filter((x) => x.memberId !== m.id).concat(saved);
+        if (isMe(m.id)) state.myContact = { email: saved.email, phone: saved.phone };
+        closeSheet();
+        toast('Contact saved');
+        rerender();
+      });
+    });
+  }
+
+  function addMemberSheet() {
+    let role = 'member';
+    openSheet(`
+      <h2>Add a member</h2>
+      <p class="sheet-sub">They join with the group's invite code and pick their name.</p>
+      <div class="field"><label for="am-name">Name</label><input id="am-name" maxlength="80" autocomplete="off" placeholder="First and last name"></div>
+      <div class="field"><span class="label">Role</span>
+        <div class="segmented" role="radiogroup" aria-label="Role" id="am-role">
+          <button type="button" role="radio" class="seg-active on" aria-checked="true" data-role="member">Member</button>
+          <button type="button" role="radio" class="seg-active" aria-checked="false" data-role="admin">Admin</button>
+        </div></div>
+      <div class="field"><label for="am-email">Email <span class="opt">optional</span></label>
+        <input id="am-email" type="email" inputmode="email" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="120"></div>
+      <div class="field"><label for="am-phone">Mobile phone <span class="opt">optional</span></label>
+        <input id="am-phone" type="tel" inputmode="tel" autocomplete="off" maxlength="24" placeholder="(512) 555-0123"></div>
+      <div class="sheet-actions"><button class="btn btn-ghost" data-cancel>Cancel</button><button class="btn btn-primary" id="am-save">Add member</button></div>`, (sheet) => {
+      $$('#am-role [data-role]', sheet).forEach((b) => b.addEventListener('click', () => {
+        role = b.dataset.role;
+        $$('#am-role [data-role]', sheet).forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-checked', x === b); });
+      }));
+      let busy = false;
+      sheet.querySelector('#am-save').addEventListener('click', async () => {
+        if (busy) return;
+        const nameEl = sheet.querySelector('#am-name');
+        const name = nameEl.value.trim().replace(/\s+/g, ' ');
+        if (!name) { nameEl.focus(); toast('Add their name'); return; }
+        const emailEl = sheet.querySelector('#am-email'); const phoneEl = sheet.querySelector('#am-phone');
+        const email = emailEl.value.trim();
+        if (email && !EMAIL_RE.test(email)) { emailEl.focus(); toast('Check the email address'); return; }
+        const phone = toE164(phoneEl.value);
+        if (phone === null) { phoneEl.focus(); toast('Enter a 10-digit US mobile number'); return; }
+        busy = true;
+        try { await api.addMember({ name, role, email: email || null, phone: phone || null }); } catch (e) { busy = false; return; }
+        await refresh();
+        await loadContact();
+        closeSheet();
+        toast(`Added ${name.split(' ')[0]}`);
+        rerender();
+      });
+    });
+  }
+
+  function removeMemberSheet(m) {
+    const first = m.name.split(' ')[0];
+    openSheet(`
+      <h2>Remove ${esc(first)}?</h2>
+      <p class="sheet-sub">${esc(first)} is signed out and leaves the roster and hot seat rotation. Their commitments, posts and comments stay in the history.</p>
+      <div class="sheet-actions"><button class="btn btn-ghost" data-cancel>Cancel</button><button class="btn btn-danger" id="rm-go">Remove ${esc(first)}</button></div>`, (sheet) => {
+      let busy = false;
+      sheet.querySelector('#rm-go').addEventListener('click', async () => {
+        if (busy) return;
+        busy = true;
+        try { await api.removeMember(m.id); } catch (e) { busy = false; return; }
+        await refresh();
+        closeSheet();
+        toast(`${first} removed`);
+        location.hash = '#/group/members';
+      });
+    });
+  }
+
+  function rotateInviteSheet() {
+    openSheet(`
+      <h2>New invite code</h2>
+      <p class="sheet-sub">The old code stops working right away. People already signed in stay signed in, unless you sign them out.</p>
+      ${switchRow('ri-signout', 'Also sign everyone else out', 'They enter the new code next time they open the app', false)}
+      <div class="sheet-actions"><button class="btn btn-ghost" data-cancel>Cancel</button><button class="btn btn-primary" id="ri-go">Make new code</button></div>`, (sheet) => {
+      let busy = false;
+      sheet.querySelector('#ri-go').addEventListener('click', async () => {
+        if (busy) return;
+        busy = true;
+        let code;
+        try { code = await api.rotateInviteCode(null, sheet.querySelector('#ri-signout').checked); } catch (e) { busy = false; return; }
+        // Shown once: only a hash is stored, so nobody can look it up later.
+        sheet.innerHTML = `<div class="grab" aria-hidden="true"></div>
+          <h2>Your new invite code</h2>
+          <p class="sheet-sub">Copy it now and send it to the group. It's shown only once.</p>
+          <p class="invite-code" id="ri-code">${esc(code)}</p>
+          <div class="sheet-actions"><button class="btn btn-ghost" id="ri-copy">${copyIcon}Copy code</button><button class="btn btn-primary" id="ri-done">Done</button></div>`;
+        sheet.querySelector('#ri-copy').addEventListener('click', () => copyText(String(code), 'Invite code copied'));
+        sheet.querySelector('#ri-done').addEventListener('click', () => closeSheet());
+      });
+    });
+  }
+
   /* ---------- Profile ---------- */
   function renderProfile() {
     const other = GROUP === 'family' ? 'entrepreneur' : 'family';
@@ -2862,25 +3311,44 @@
           <span class="row-sub">${esc(isZoom(g) ? `Zoom, ${shortUrl(g.url)}` : g.type === 'zoom' ? 'Zoom, link not added yet' : locText(g))}</span></span>${chev}</button>
       </div>`;
       })() : ''}
+      ${SUPA ? (() => {
+        const c = state.myContact;
+        const p = state.prefs || {};
+        const have = c ? [c.email, c.phone && prettyPhone(c.phone)].filter(Boolean).join(', ') : '';
+        const missing = c ? missingContact(c) : '';
+        const on = [c && c.phone && p.sms !== false ? 'Texts' : '', p.email !== false ? 'Email' : ''].filter(Boolean);
+        return `<h2 class="sec">Reminders</h2>
+      <div class="rows">
+        <button class="row" id="edit-contact"><span class="row-main"><span class="row-title">Email, phone and reminders</span>
+          <span class="row-sub">${c ? esc(have || 'Not added yet') : 'Not loaded. Check your connection.'}</span>
+          ${c ? `<span class="row-sub">${esc(on.length ? `${on.join(' and ')} on` : 'Texts and email off')}${missing ? `. Add your ${esc(missing)}` : ''}</span>` : ''}</span>${chev}</button>
+      </div>`;
+      })() : ''}
       <h2 class="sec">Device</h2>
       <div class="rows">
-        <button class="row" id="switch-user"><span class="row-main"><span class="row-title">Switch user</span><span class="row-sub">Pick a different name on this device</span></span>${chev}</button>
-        <a class="row" href="?group=${other}"><span class="row-main"><span class="row-title">Switch group</span><span class="row-sub">Open ${esc(otherName)}</span></span>${chev}</a>
+        ${SUPA ? (() => {
+          const snap = state.offline ? store.get('snapshot', null) : null;
+          return `<div class="row static conn-row" id="conn-row"><span class="conn-dot ${state.offline ? 'off' : 'on'}" aria-hidden="true"></span>
+          <span class="row-main"><span class="row-title">${state.offline ? 'Offline, showing cached' : 'Connected'}</span>
+          <span class="row-sub">${state.offline ? `${snap && snap.savedAt ? `Saved ${esc(relTime(snap.savedAt))}. ` : ''}Changes may not save until you're back online.`
+            : baseApi.realtimeConnected ? 'Live updates on' : 'Checks for updates every 30 seconds'}</span></span></div>`;
+        })() : ''}
+        <button class="row" id="switch-user"><span class="row-main"><span class="row-title">Switch user</span><span class="row-sub">${SUPA ? "Sign out on this device. You'll need the invite code again" : 'Pick a different name on this device'}</span></span>${chev}</button>
+        <a class="row" href="?group=${other}${params.get('backend') === 'local' ? '&backend=local' : ''}"><span class="row-main"><span class="row-title">Switch group</span><span class="row-sub">Open ${esc(otherName)}</span></span>${chev}</a>
       </div>
-      <h2 class="sec">Prototype</h2>
+      ${SUPA ? '' : `<h2 class="sec">Prototype</h2>
       <p class="soon-line">Your changes are saved on this device only. Reset to restore the sample data for ${esc(state.config.name)}.</p>
-      <button class="btn btn-danger btn-block" id="reset">Reset demo data</button>`, '');
+      <button class="btn btn-danger btn-block" id="reset">Reset demo data</button>`}`, '');
 
     $('#edit-about').addEventListener('click', editAbout);
+    const ec = $('#edit-contact');
+    if (ec) ec.addEventListener('click', editContact);
     $('#edit-wg').addEventListener('click', editWorkingGenius);
     const el = $('#edit-loc');
     if (el) el.addEventListener('click', editGroupLocation);
-    $('#switch-user').addEventListener('click', () => {
-      store.remove('user');
-      state.me = null;
-      renderWho();
-    });
-    $('#reset').addEventListener('click', async () => {
+    $('#switch-user').addEventListener('click', () => signOutToInvite());
+    const reset = $('#reset');
+    if (reset) reset.addEventListener('click', async () => {
       if (!confirm('Reset all sample data for this group? Your edits will be lost.')) return;
       await api.resetDemo();
       store.remove('bannerDismissed');
@@ -2902,6 +3370,8 @@
     if (!store.get('verified', false)) return renderInvite();
     if (!state.me) return renderWho();
     if (!rulesAccepted()) return renderRulesGate();
+    // First run with Supabase: ask for email and phone once (saved or skipped).
+    if (SUPA && state.myContact && !contactComplete() && !store.get(setupKey(), null)) return renderProfileSetup();
     showChrome(true);
     const y = window.scrollY;
     if (keepScroll !== true) {
@@ -2946,31 +3416,162 @@
     window.scrollTo(0, keepScroll === true ? y : 0);
   }
 
+  const COLLECTIONS = ['members', 'meetings', 'commitments', 'goals', 'checkins', 'asks', 'announcements', 'ideas', 'books', 'readingList', 'gettogethers'];
+  /* Loads everything into state. Demo mode: throws on failure (init shows the error).
+     Supabase mode: never throws. On failure it keeps what's on screen, or the last
+     good copy saved on this device, sets state.offline and returns false. */
   async function loadData() {
-    const [members, meetings, commitments, goals, checkins, asks, announcements, ideas, books, readingList, gettogethers] = await Promise.all([
-      api.getMembers(), api.getMeetings(), api.getCommitments(), api.getGoals(), api.getCheckins(), api.getAsks(),
-      api.getAnnouncements(), api.getIdeas(), api.getBooks(), api.getReadingList(), api.getGetTogethers()
-    ]);
-    const groupLoc = await api.getGroupLocation();
-    Object.assign(state, { members, meetings, commitments, goals, checkins, asks, announcements, ideas, books, readingList, gettogethers, groupLocation: groupLoc });
+    try {
+      const [members, meetings, commitments, goals, checkins, asks, announcements, ideas, books, readingList, gettogethers] = await Promise.all([
+        baseApi.getMembers(), baseApi.getMeetings(), baseApi.getCommitments(), baseApi.getGoals(), baseApi.getCheckins(), baseApi.getAsks(),
+        baseApi.getAnnouncements(), baseApi.getIdeas(), baseApi.getBooks(), baseApi.getReadingList(), baseApi.getGetTogethers()
+      ]);
+      const groupLoc = await baseApi.getGroupLocation();
+      Object.assign(state, { members, meetings, commitments, goals, checkins, asks, announcements, ideas, books, readingList, gettogethers, groupLocation: groupLoc });
+      if (SUPA && baseApi.isSignedIn()) {
+        state.offline = false;
+        // Last good copy, for opening the app offline. Contact details are never in it.
+        // Includes the server-only config (rules, version, usual place with the Zoom link):
+        // config/<group>.json no longer has the link, so offline it comes from here.
+        const cfgExtra = {};
+        ['rules', 'rulesVersion', 'location'].forEach((k) => { if (state.config && state.config[k] !== undefined) cfgExtra[k] = state.config[k]; });
+        const snap = { savedAt: new Date().toISOString(), groupLocation: groupLoc, config: cfgExtra };
+        COLLECTIONS.forEach((k) => { snap[k] = state[k]; });
+        store.set('snapshot', snap);
+      }
+      state.loaded = true;
+    } catch (err) {
+      if (!SUPA) throw err;
+      state.offline = true;
+      const snap = store.get('snapshot', null);
+      if (!state.loaded && snap && baseApi.isSignedIn()) {
+        COLLECTIONS.forEach((k) => { if (Array.isArray(snap[k])) state[k] = snap[k]; });
+        state.groupLocation = snap.groupLocation || null;
+        if (snap.config && state.config) Object.assign(state.config, snap.config);
+        state.loaded = true;
+      }
+      if (state.me) state.me = memberById(state.me.id) || state.me;
+      return false;
+    }
     if (state.me) state.me = memberById(state.me.id) || state.me;
+    return true;
+  }
+
+  // Supabase: your contact details and reminder toggles (admins: everyone's contacts).
+  // Separate from loadData because they're private and not part of the cached copy.
+  async function loadContact() {
+    if (!SUPA || !baseApi.isSignedIn()) return;
+    const [c, p] = await Promise.all([baseApi.getMyContact().catch(noteError), baseApi.getNotificationPrefs().catch(noteError)]);
+    if (c) state.myContact = { email: c.email || null, phone: c.phone || null };
+    if (p) state.prefs = p;
+    const role = (state.me && state.me.role) || (state.session && state.session.role);
+    state.contacts = role === 'admin' ? await baseApi.getContacts().catch(() => state.contacts) : null;
+  }
+  const contactComplete = () => !!(state.myContact && state.myContact.email && state.myContact.phone);
+  const setupKey = () => `profileSetup:${state.me.id}`;
+
+  // First load: skeleton rows in the group's own style (cards, rules, motif), not a spinner.
+  function renderSkeleton() {
+    $('#topbar').hidden = false;
+    $('#tabbar').hidden = false;
+    const row = (w) => `<div class="row static skel-row" aria-hidden="true"><span class="skel skel-dot"></span>
+      <span class="row-main"><span class="skel skel-line" style="width:${w}%"></span><span class="skel skel-line skel-sub"></span></span></div>`;
+    setView(`<div class="skel-wrap" role="status" aria-label="Loading ${esc(state.config.name)}">
+      <div class="skel skel-hero" aria-hidden="true"></div>
+      <span class="skel skel-line skel-sec" aria-hidden="true"></span>
+      <div class="rows">${row(72)}${row(58)}${row(66)}</div>
+      <span class="skel skel-line skel-sec" aria-hidden="true"></span>
+      <div class="rows">${row(48)}${row(62)}</div>
+    </div>`, 'home');
+  }
+  // Signed in but nothing could be loaded and nothing is cached.
+  function renderLoadError() {
+    showChrome(false);
+    setView(`<div class="load-error"><b>Couldn't reach ${esc(state.config.name)}.</b>
+      <p>Check your connection, then try again. Nothing you've saved is lost.</p>
+      <button class="btn btn-primary" id="retry-load">Try again</button></div>`, '');
+    $('#retry-load').addEventListener('click', async () => {
+      renderSkeleton();
+      await afterSignIn();
+      if (!state.loaded) return renderLoadError();
+      state.me = memberById(store.get('user', null)) || null;
+      route();
+    });
+  }
+
+  // Sheet open or someone typing: don't redraw under them.
+  const isBusy = () => !!$('#sheet-root').innerHTML
+    || !!(document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName));
+  async function applyRemote() {
+    if (isBusy()) { state.pendingRemote = true; return; }
+    state.pendingRemote = false;
+    await loadData();
+    if (!isBusy()) rerender(); else state.pendingRemote = true;
+  }
+
+  function bindLiveUpdates() {
+    if (!SUPA) return;
+    // Another member changed something: the api already refetched it; redraw.
+    window.addEventListener('mastermind:remote-change', () => { if (state.me) applyRemote(); });
+    // A quick write (RSVP, status, like, comment...) was refused after the screen
+    // showed it. The api has put its cache back; show that.
+    // (Writes the screen waits for report through their own rejection instead.)
+    window.addEventListener('mastermind:sync-error', (e) => {
+      const d = e.detail || {};
+      const err = d.error || d;
+      noteError(err);
+      if (d.background === false) return;
+      toast(friendlyError(err), 4000);
+      if (state.me) applyRemote();
+    });
+    // Session revoked (signed out elsewhere, removed, code rotated with sign-out).
+    window.addEventListener('mastermind:signed-out', () => {
+      if (!state.me && !store.get('verified', false)) return;
+      clearSignedInState();
+      closeSheet(true);
+      toast('You were signed out. Enter the invite code to sign in again.', 4000);
+      route();
+    });
+    window.addEventListener('online', async () => {
+      if (!state.me) return;
+      const ok = await loadData();
+      if (ok) { await loadContact(); if (!isBusy()) rerender(); }
+    });
+    window.addEventListener('offline', () => {
+      state.offline = true;
+      if (location.hash === '#/profile' && !isBusy()) rerender();
+    });
   }
 
   async function init() {
+    // api rejections are already shown as a toast; don't also report them as uncaught.
+    window.addEventListener('unhandledrejection', (e) => { if (e.reason instanceof HandledError) e.preventDefault(); });
     try {
-      state.config = await api.getConfig();
+      state.config = await baseApi.getConfig();
+      if (!state.config || !state.config.colors) throw new Error(`Could not load config/${GROUP}.json`);
       applyBranding(state.config);
-      await loadData();
+      bindLiveUpdates();
+      if (SUPA && baseApi.isSignedIn()) {
+        renderSkeleton();
+        await afterSignIn();
+        if (!baseApi.isSignedIn()) clearSignedInState();          // session was revoked
+        else if (!state.loaded) { window.addEventListener('hashchange', () => route()); return renderLoadError(); }
+      } else {
+        if (SUPA) { store.remove('user'); store.remove('snapshot'); }  // no session: start at the invite
+        await loadData();
+      }
       state.me = memberById(store.get('user', null)) || null;
       window.addEventListener('hashchange', () => route());
       route();
       // Keep the countdown fresh without re-rendering (so typing in a form isn't lost).
       setInterval(() => {
+        const busy = isBusy();
+        // Someone else's change arrived while this person was mid-edit: apply it now.
+        if (state.pendingRemote && !busy && state.me) { applyRemote(); return; }
         const el = $('#cd-num');
         const nm = heroMeeting();
         if (!el || !nm) return;
         // The join window opened/closed or the meeting started: redraw Home, unless someone is mid-edit.
-        const busy = $('#sheet-root').innerHTML || (document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName));
         if (liveKey() !== homeLiveKey && !busy) { rerender(); return; }
         const cd = countdown(nm);
         el.textContent = cd.num;

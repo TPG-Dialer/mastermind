@@ -1,6 +1,6 @@
 # Supabase backend
 
-The real backend for the Mastermind app: one Supabase project for both groups (The Shoreline = `family`, Flight Club = `entrepreneur`). Nothing here changes the prototype. It keeps running on JSON and localStorage until the swap described at the end.
+The real backend for the Mastermind app: one Supabase project for both groups (The Shoreline = `family`, Flight Club = `entrepreneur`). The app uses it by default; `?backend=local` runs the old demo on JSON and localStorage.
 
 ## What's in this folder
 
@@ -11,6 +11,7 @@ The real backend for the Mastermind app: one Supabase project for both groups (T
 | `seed.sql` | The prototype's sample data. Generated, don't edit by hand |
 | `seed/generate.py` | Rebuilds `seed.sql` from `config/*.json` and `data/*.json` |
 | `cron.sql` | The schedule: reminders hourly, sending every 5 minutes, meetings monthly |
+| `migrations_extra/` | SQL added after the first deploy, one numbered file per change (see below) |
 | `functions/join` | Invite code + pick your name, returns a session |
 | `functions/schedule-notifications` | Queues reminders that are coming due |
 | `functions/send-notifications` | Sends queued email, SMS and push |
@@ -109,7 +110,7 @@ You need the Supabase project (your existing account is fine), Node.js on your c
 
 ## Everyday admin tasks (SQL Editor)
 
-Until the admin screens are built, these are one-liners. Every app-side function (`admin_*`) also exists in `api-supabase.js` for when the screens come.
+The app now does the common ones for admins: Group > Members > Add a member, New invite code, and on a member's page, their contact details and Remove from the group. These SQL one-liners still work and cover the rest.
 
 **Set or change an invite code.** The old code stops working at once; people already signed in stay signed in.
 ```sql
@@ -161,13 +162,23 @@ Then:
 1. Add the real members as above.
 2. Set a new invite code.
 3. Run `generate-meetings`.
-4. Remove `inviteCode` and the Zoom link from `config/<group>.json`. That file is public on GitHub Pages; the database copy is the private one.
+4. `config/<group>.json` no longer has the invite code or the Zoom link (it's public on GitHub Pages; the database copy is the private one). Keep it that way. Set the real Zoom link in the app: Profile > Meeting location.
 
 To start without `seed.sql` at all, run `python3 supabase/seed/generate.py` after editing the JSON, or ask Fable for a settings-only seed.
 
-## Switching the app to Supabase
+## Changing the database after the first deploy
 
-This hasn't been done yet; the prototype still uses `api` in `app.js`. When it's time:
+The deploy workflow (`.github/workflows/supabase-deploy.yml`) turns `schema.sql`, `policies.sql`, `seed.sql` and `cron.sql` into four migrations. Those have already run on the live project, and `supabase db push` never re-runs a migration, so editing those files alone changes nothing there.
+
+For a change:
+1. Add `supabase/migrations_extra/NNNN_what.sql` with the next number (`0005`, `0006`, ...). Make it safe to run twice (`create or replace`, `drop policy if exists`, `if not exists`). The workflow copies it to `migrations/20261031000NNN_what.sql`, after the original four.
+2. Also append the same SQL to `schema.sql` or `policies.sql`, so a fresh setup from those files ends up the same.
+
+`0005_contacts_admin.sql`: the update rule on `member_contacts` now also checks the new row, so a member can't move their contact row to another member's id. Everything else the profile setup and admin screens need was already allowed: members read and write their own contact row, admins read and write anyone's in their group, members update their own reminder toggles and profile.
+
+## Switching the app to Supabase (done)
+
+Done on 2026-10-31. For the record, these were the steps:
 
 1. **index.html.** Add one line just above `<script src="app.js"></script>`:
    ```html
@@ -188,11 +199,13 @@ This hasn't been done yet; the prototype still uses `api` in `app.js`. When it's
    - Add `window.addEventListener('mastermind:sync-error', (e) => toast("Couldn't save: " + e.detail.message))`.
 6. **sw.js.** Add a `push` handler that shows `event.data.json()` with `self.registration.showNotification(title, { body, data: { url } })`. Add a `notificationclick` handler that opens `data.url`. Add both new files to the cache list and bump `VERSION`.
 
-`resetDemo` becomes harmless in Supabase mode: it only clears the phone's cached copy. Hide that button when `api.backend === 'supabase'`.
+`resetDemo` becomes harmless in Supabase mode: it only clears the phone's cached copy. The button is hidden when `api.backend === 'supabase'`.
+
+Beyond those steps, the app also: shows a profile setup screen after the rules when email or phone is missing (`updateMyContact`, `updateNotificationPrefs`, `updateMyProfile`), has the admin roster tools in Members, keeps a cached copy for offline use, and turns every failed call into a toast instead of a broken screen. See the main README, "Supabase backend".
 
 ## Testing a fresh setup
 
-In the browser console on the app, after step 11:
+In the browser console on the app (not with `?backend=local`, which leaves `MASTERMIND_API` unset):
 ```js
 await MASTERMIND_API.verifyInvite('FAMILY2026')   // roster
 await MASTERMIND_API.join('m3')                   // Jake

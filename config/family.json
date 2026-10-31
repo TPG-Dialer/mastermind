@@ -29,11 +29,10 @@
   "location": {
     "type": "zoom",
     "label": "Zoom",
-    "url": "https://zoom.us/j/0000000000?pwd=PLACEHOLDER",
+    "url": null,
     "address": null
   },
   "credit": { "label": "Built by TPG", "url": "https://PLACEHOLDER-tpg-website" },
-  "inviteCode": "FAMILY2026",
   "sheetId": "PLACEHOLDER",
   "rules": [
     "What's said in the room stays in the room. Ask before sharing someone's story.",

@@ -439,3 +439,15 @@ create policy mm_activity_select on public.group_activity for select to anon
 
 -- No policies (service role only): group_invites, sessions, join_attempts,
 -- notification_queue, notification_log.
+
+-- ---------------------------------------------------------------------
+-- Added by migrations_extra/0005_contacts_admin.sql (kept here so a fresh
+-- setup from this file gets the same rules). A member's contact row must
+-- stay theirs on update; admins can edit anyone's in the group.
+-- ---------------------------------------------------------------------
+drop policy if exists mm_contacts_update on public.member_contacts;
+create policy mm_contacts_update on public.member_contacts for update to anon
+  using (group_id = (select public.current_group_id())
+         and (member_id = (select public.current_member_id()) or (select public.is_admin())))
+  with check (group_id = (select public.current_group_id())
+              and (member_id = (select public.current_member_id()) or (select public.is_admin())));

@@ -1,10 +1,12 @@
 /* Mastermind: Supabase data layer.
    Drop-in replacement for the `api` object in app.js: same method names,
-   same arguments, same return shapes (README "Data shapes"). Not wired in yet;
-   see README "Switching to the Supabase backend".
+   same arguments, same return shapes (README "Data shapes"). index.html loads
+   it before app.js; app.js uses window.MASTERMIND_API when it is set.
 
    Needs window.MASTERMIND_SUPABASE = { url, anonKey, vapidPublicKey? } from
-   config/supabase.js, loaded before this file. Exposes window.MASTERMIND_API.
+   config/supabase.js, loaded before this file. Exposes window.MASTERMIND_API,
+   except with ?backend=local in the URL or when url/anonKey are missing: then
+   app.js falls back to its built-in demo data.
 
    How it talks to Supabase
    - Tables and RPCs through PostgREST (fetch, no library needed).
@@ -235,16 +237,18 @@
       local = apply();
       emit('local-change', { collections: colls });
     }
+    // background: the caller already got the optimistic result, so only this event reports a failure.
+    const background = !!(optimistic && OPTIMISTIC && local !== undefined);
     const server = send().then(async (res) => {
       colls.forEach(markDirty);
       await Promise.all(colls.map((c) => load(c).catch(() => null)));
       return res;
     }, (err) => {
       colls.forEach((c) => { if (snap[c]) cache[c] = snap[c]; markDirty(c); });
-      emit('sync-error', { message: err.message, error: err, collections: colls });
+      emit('sync-error', { message: err.message, error: err, collections: colls, background });
       throw err;
     });
-    if (optimistic && OPTIMISTIC && local !== undefined) {
+    if (background) {
       server.catch(() => { /* reported through mastermind:sync-error */ });
       return clone(local);
     }
@@ -731,6 +735,7 @@
     },
 
     /* Reminders: your toggles, contact details and this device's push subscription. */
+    // { sms, email, nudges } for you (defaults if the row is missing).
     async getNotificationPrefs() {
       const rows = await rest('GET', `notification_prefs?select=sms,email,nudges&member_id=eq.${enc(myId())}`);
       return rows[0] || { sms: true, email: true, nudges: true };
@@ -738,18 +743,33 @@
     async setNotificationPrefs(p) {
       const rows = await rest('PATCH', `notification_prefs?member_id=eq.${enc(myId())}`,
         { body: pickMap(p, { sms: 'sms', email: 'email', nudges: 'nudges' }), prefer: RETURN });
-      return rows[0];
+      // Every member gets a prefs row from a trigger; no row back means the update didn't apply.
+      if (!rows || !rows[0]) throw new ApiError("Couldn't save your reminder settings.", 404);
+      return { sms: rows[0].sms, email: rows[0].email, nudges: rows[0].nudges };
     },
+    updateNotificationPrefs(p) { return api.setNotificationPrefs(p); },
     async getMyContact() {
       const rows = await rest('GET', `member_contacts?select=email,phone&member_id=eq.${enc(myId())}`);
       return rows[0] || { email: null, phone: null };
     },
     // phone in E.164 (+15125550123). Pass memberId to edit someone else's (admins).
+    // Sends both fields: a missing one is saved as empty.
     async saveContact({ email, phone, memberId }) {
       const rows = await rest('POST', 'member_contacts?on_conflict=member_id', { prefer: UPSERT,
         body: { member_id: memberId || myId(), email: email || null, phone: phone || null } });
-      return rows[0];
+      const r = (rows && rows[0]) || {};
+      return { memberId: r.member_id || memberId || myId(), email: r.email || null, phone: r.phone || null };
     },
+    updateMyContact({ email, phone }) { return api.saveContact({ email, phone }); },
+    // Admins: everyone's contact rows in the group. Members get only their own (RLS).
+    // [{ memberId, email, phone }]; members with no row are simply missing.
+    async getContacts() {
+      const rows = await rest('GET', 'member_contacts?select=member_id,email,phone');
+      return (rows || []).map((r) => ({ memberId: r.member_id, email: r.email || null, phone: r.phone || null }));
+    },
+    adminSaveContact(memberId, { email, phone }) { return api.saveContact({ memberId, email, phone }); },
+    // Your own profile fields (bio, focus, canHelpWith, workingGenius).
+    updateMyProfile(patch) { return api.updateMember(myId(), patch); },
     // Needs a service worker with a 'push' handler (see supabase/README.md) and VAPID public key in config.
     async enablePush() {
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) throw new ApiError('This browser does not support notifications. On iPhone, add the app to your Home Screen first.', 0);
@@ -802,5 +822,7 @@
     });
   }
 
-  window.MASTERMIND_API = api;
+  // ?backend=local (or no project configured) keeps the prototype's demo data in app.js.
+  const forceLocal = new URLSearchParams(location.search).get('backend') === 'local';
+  if (!forceLocal && SB.url && SB.anonKey) window.MASTERMIND_API = api;
 })();

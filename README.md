@@ -1,6 +1,6 @@
-# Mastermind app (prototype)
+# Mastermind app
 
-Clickable prototype of a mobile web app (PWA) for two mastermind groups. Plain HTML, CSS and JavaScript. No build step.
+Mobile web app (PWA) for two mastermind groups. Plain HTML, CSS and JavaScript. No build step. Runs on the live Supabase backend; `?backend=local` runs the original demo on sample data instead.
 
 ## Run locally
 
@@ -13,18 +13,26 @@ Open:
 - The Shoreline (family) group: http://localhost:8000/?group=family
 - Flight Club (entrepreneur) group: http://localhost:8000/?group=entrepreneur
 
+That talks to the Supabase project in `config/supabase.js` (see "Supabase backend" below). `localhost:8000` and `localhost:8765` are on the server's allowed list.
+
+Demo mode, no network: add `&backend=local`, e.g. http://localhost:8000/?group=family&backend=local. Data comes from `data/<group>.json` and edits stay in this browser. Demo mode is also what runs if `config/supabase.js` has no URL or key, or if `index.html` doesn't load `api-supabase.js`.
+
 It must be served over http(s). Opening `index.html` directly from disk will not load the data files.
 
 On GitHub Pages, push this folder and open `https://<user>.github.io/<repo>/?group=family`.
 
 ## Demo logins
 
+Same codes in both modes: Supabase was seeded with them (`supabase/seed.sql`), and demo mode keeps them in `app.js` (`DEMO`). They are no longer in `config/*.json`. Change the real ones with Members > New invite code.
+
 | Group | Invite code | Admin (first in list) | Hot seat on next meeting |
 |---|---|---|---|
 | The Shoreline | `FAMILY2026` | Mark Ellison | Emily Ellison (Nov 8) |
 | Flight Club | `FOUNDERS2026` | Rachel Kim | Dana Whitfield (Nov 20) |
 
-The first time each person opens the app on a device, they agree to the group's ground rules (from `rules` in the config).
+The first time each person opens the app on a device, they agree to the group's ground rules (from `rules` in the config; with Supabase, from the database, and the agreement is saved there per rules version).
+
+With Supabase, the invite code is checked by the server (`join` function), tapping your name creates a session for this device, and Switch user signs out (the code is needed again). Then, if your email or phone is missing, "Set up your profile" asks for email, mobile phone (saved as +1 E.164), "Text me reminders" (on when a phone is given), "Email me reminders" (on) and an optional "What do you do". "Skip for now" is fine; Home then shows "Add your email and phone" under the to-do list until both are in. The seeded members have no contact details, so everyone sees this screen once.
 
 Pick the admin to edit agendas, meetings, the hot seat rotation and anyone's commitments or goals, see the meeting headcount, pin announcements and set the group book. Tap the avatar (top right) > Switch user to try a regular member. Daniel Ruiz (family) and Luis Ortega (Flight Club) had the last hot seat.
 
@@ -44,13 +52,16 @@ Five tabs. Home answers "what do I need to do before the next meeting?"; everyth
   - Books: group book on top, all books with want/reading/finished counts, "My list" filter. Book detail: why, your status, who's at each stage, comments.
   - Ideas: ideas, links, tools, articles, podcasts. Filter by type, like, comment. Links open in a new tab.
   - Rules: the ground rules to reread.
-- **Profile** (avatar in top bar): edit what you do, focus and what you can help with; enter Working Genius results (link to workinggenius.com, the app doesn't run the assessment); switch user, switch group, reset demo data. Admins also get Group settings > Meeting location (the group's usual place).
+- **Profile** (avatar in top bar): edit what you do, focus and what you can help with; enter Working Genius results (link to workinggenius.com, the app doesn't run the assessment); switch user, switch group. Admins also get Group settings > Meeting location (the group's usual place).
+  - Supabase: Reminders > "Email, phone and reminders" (same fields as the setup screen), and a Connected / "Offline, showing cached" line under Device.
+  - Demo mode: Reset demo data.
+- **Members, admin tools** (Supabase, admins only): a small "No email" / "No phone" / "No email or phone" marker on each member reminders can't fully reach. Under Admin: Add a member (name, role, optional email and phone) and New invite code (the old code stops working; optionally signs everyone else out; the new code is shown once). On a member's page: their contact details (tap to edit) and "Remove from the group" (soft remove: signed out, off the roster and future hot seats, history kept).
 
 ## Meeting location
 
 Each group has a usual place in its config (`location`), and any meeting can be different.
 
-- The Shoreline: Zoom. The link in `config/family.json` is a **placeholder** (`https://zoom.us/j/0000000000?pwd=PLACEHOLDER`). Replace it with the real recurring meeting link (or set it in the app: Profile > Meeting location).
+- The Shoreline: Zoom. The link is a **placeholder** (`https://zoom.us/j/0000000000?pwd=PLACEHOLDER`), stored in the database (`group_settings.location_default`), not in `config/family.json` (public on GitHub Pages; its `url` is now null). Set the real recurring link in the app: Profile > Meeting location. Demo mode fills in the placeholder from `DEMO` in `app.js`.
 - Flight Club: in person, address "Location shared in announcements" (**placeholder** until there's a real address).
 - Sample override: December Shoreline is in person at "Mark & Linda's house".
 
@@ -60,7 +71,7 @@ Where it shows:
 - Meeting detail: a Where card with the place, a copy button (Zoom link or address), Join Zoom for Zoom meetings, and "Just this meeting. Usually ..." when a meeting differs from the group's usual place.
 - Calendar file: LOCATION is the Zoom link or the address; Zoom meetings start the description with "Join: <link>".
 - Admin, Edit meeting: Location section with a "Use group default" switch. Turn it off to pick Zoom or In person and enter the link or address; turn it back on to clear the meeting's own location.
-- Admin, Profile > Meeting location: changes the group's usual place. Saved on this device like other edits; Reset demo data puts the config value back.
+- Admin, Profile > Meeting location: changes the group's usual place (Supabase: for everyone; demo mode: on this device, and Reset demo data puts the config value back).
 
 Home re-checks every 30 seconds and redraws when the join window opens or closes (not while a sheet is open or you're typing).
 
@@ -73,11 +84,12 @@ Each group has its own saved login and data on the device.
 
 ## Files
 
-- `index.html`, `styles.css`, `app.js` – the app.
-- `config/<group>.json` – name, subtitle, tagline, `verse` (short, full, ref), `dedication` (family), `nextLabel` (hero eyebrow), `enterLabel` (invite button), colors (primary, accent, background, text, surface, muted, rule, secondary, good, goodBg), logo (`logoMask` for Flight Club, `logoSvg` for The Shoreline, `logoText` fallback), meeting length, `location` (usual meeting place, see Meeting location), invite code, Google Sheet ID, `rules` (list of short ground rules).
+- `index.html`, `styles.css`, `app.js` – the app. `index.html` loads `config/supabase.js` and `api-supabase.js` before `app.js`.
+- `api-supabase.js` – the Supabase data layer (sets `window.MASTERMIND_API`). `config/supabase.js` – project URL and publishable key (safe to publish).
+- `config/<group>.json` – name, subtitle, tagline, `verse` (short, full, ref), `dedication` (family), `nextLabel` (hero eyebrow), `enterLabel` (invite button), colors (primary, accent, background, text, surface, muted, rule, secondary, good, goodBg), logo (`logoMask` for Flight Club, `logoSvg` for The Shoreline, `logoText` fallback), meeting length, `location` (usual meeting place without the Zoom link, see Meeting location), `sheetId` (unused), `rules` (list of short ground rules). Public on GitHub Pages: no invite codes or private links in here.
 - `data/<group>.json` – sample data, shaped like the future Google Sheet tabs (see below).
 - `manifest.webmanifest` (The Shoreline), `manifest-entrepreneur.webmanifest` (Flight Club) – home-screen install info per group.
-- `sw.js` – offline cache. Bump `VERSION` in it when files change.
+- `sw.js` – offline cache (app files only; Supabase calls are never cached by it), plus web push: shows `{ title, body, url }` from `send-notifications` and opens `url` when tapped. Bump `VERSION` in it when files change (now `mm-v10`).
 
 ## Maker credit
 
@@ -169,36 +181,38 @@ Rules the app applies:
 
 ## What's fake
 
-- All names, meetings, goals, check-ins, asks and commitments.
+- All names, meetings, goals, check-ins, asks and commitments (seeded into Supabase from `data/*.json`).
 - Both groups' names, logos and colors are real. Meeting days and times for The Shoreline are still placeholders.
-- Invite codes are checked in the browser (not secure; fine for a prototype).
 - The Shoreline's Zoom link and Flight Club's address are placeholders.
-- Edits are saved only in this browser (localStorage). Profile > Reset demo data restores the samples. Saved data from the older prototype is replaced automatically.
-- No email, SMS or push reminders yet. The in-app reminder line is the only reminder.
+- Demo mode only: invite codes are checked in the browser, and edits are saved only in this browser (Profile > Reset demo data restores the samples).
+- Reminders run in dry-run (`DRY_RUN=true`): email, SMS and push are written to the function logs, not sent. Push also needs `vapidPublicKey` in `config/supabase.js`.
 - Working Genius results are typed in by each person. The app links to workinggenius.com and never recreates the assessment.
 - Attendance is sample data only; there's no screen to take attendance yet.
 
-## Connecting the real backend later
+## Data layer
 
-All data access is in the `api` object at the top of `app.js`. Each method returns a Promise:
+All data access goes through `api` in `app.js`. Each method returns a Promise. `api` is `window.MASTERMIND_API` (Supabase) when it's set, else the built-in demo layer (`baseApi`), wrapped so any failed call shows a toast and leaves the screen as it was (the handler stops; open sheets stay open). Login and the first load use `baseApi` directly and show their own errors. Methods:
 
 `getConfig, getMembers, updateMember, getMeetings, updateMeeting (patch `location: null` clears a meeting's own location), getGroupLocation, setGroupLocation, setMeetingRsvp, swapHotSeat, saveHotSeatPrep, saveActionPlan, getCommitments, updateCommitment, createCommitment, getGoals, saveGoal, getCheckins, saveCheckin, getAsks, createAsk, replyToAsk, updateAsk, setAskNeeds, getAnnouncements, createAnnouncement, updateAnnouncement, commentOnAnnouncement, getIdeas, createIdea, toggleIdeaLike, commentOnIdea, getBooks, createBook, setGroupBook, commentOnBook, getReadingList, setReadingStatus, getGetTogethers, saveGetTogether, rsvpGetTogether, cancelGetTogether, resetDemo`
 
-Replace their bodies with calls to the Apps Script web app; the screens don't need to change.
+Supabase adds: `verifyInvite, join, signOut, getSession, isSignedIn, acceptRules, getMyContact, updateMyContact, getNotificationPrefs, updateNotificationPrefs, updateMyProfile, getContacts, adminSaveContact, addMember, removeMember, restoreMember, adminUpdateMember, rotateInviteCode`, trainings, attendance and push. The screens check `api.backend === 'supabase'` before using them.
 
-Privacy note for the backend: in the prototype `getGetTogethers` returns everything and the screens hide invite-only events. The real backend must filter on the server (open ones, plus closed ones where the caller is host, invitee or admin), or anyone could read them from the network.
+Privacy: in demo mode `getGetTogethers` returns everything and the screens hide invite-only events. With Supabase the server filters them (row-level security).
 
-## Supabase backend (built, not switched on yet)
+## Supabase backend (live)
 
 The backend is Supabase (it replaced the Google Sheets + Apps Script plan). Everything is in `supabase/`; setup steps are in `supabase/README.md` and the reminder plan is in `supabase/NOTIFICATIONS.md`.
 
-- `api-supabase.js` is a drop-in replacement for `api`: the same method names, arguments and return shapes, plus extras for login, trainings, reminders and admin. It reads `config/supabase.js` (project URL and key; placeholders for now).
-- On the server, closed get-togethers, contact details and other groups' data are filtered by row-level security, not by the screens.
+- `api-supabase.js` is a drop-in replacement for `api`: the same method names, arguments and return shapes, plus extras for login, contacts, trainings, reminders and admin. It reads `config/supabase.js` (project URL and publishable key).
+- On the server, closed get-togethers, contact details and other groups' data are filtered by row-level security, not by the screens. Contact details are readable only by the member and the group's admins.
+- Every request sends `apikey` and, once signed in, `x-session-token` (the session from `join`).
 
-How the swap will happen (details in `supabase/README.md`, "Switching the app to Supabase"):
-1. `index.html`: one line above `app.js`: `<script src="config/supabase.js"></script><script src="api-supabase.js"></script>`
-2. `app.js` line 34: `const api = window.MASTERMIND_API || (function () {`. With the two scripts left out, the prototype keeps working exactly as now.
-3. The invite, name-pick and switch-user handlers call `api.verifyInvite`, `api.join` and `api.signOut`, because the server now checks the invite code.
+How the app behaves with it:
+- **First open:** skeleton rows in the group's style while data loads, not a spinner.
+- **Live updates:** when another member changes something, the app refetches and redraws, but never while a sheet is open or you're typing; the change is applied when the sheet closes. Realtime pings are used if they connect; otherwise it checks every 30 seconds and when the app comes back to the front.
+- **Quick actions** (RSVP, status, likes, comments, check-ins) update the screen at once; if the server refuses, the screen goes back and a toast says "Couldn't save: ...".
+- **Offline:** the last good copy is kept on the device (never contact details). Opening the app offline shows it, and Profile says "Offline, showing cached". With nothing cached, you get "Couldn't reach ..." and Try again, not a blank screen.
+- **Signed out elsewhere** (removed, or code rotated with "sign everyone out"): back to the invite screen.
 
-The data calls need only steps 1 and 2. Step 3 is needed because a real login can't be checked in the browser.
+Database changes after the first deploy go in `supabase/migrations_extra/NNNN_name.sql` (the deploy workflow copies them after the original four). `0005_contacts_admin.sql` tightens one rule: a member can't move their contact row to someone else's id.
 

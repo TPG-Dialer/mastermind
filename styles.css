@@ -1993,3 +1993,50 @@ a.idea-title { color: var(--primary-ink); text-decoration: none; }
 [data-group="entrepreneur"] .credit-text { font-family: var(--display); font-weight: 500; font-size: 10px; text-transform: none; letter-spacing: .02em; }
 [data-group="entrepreneur"] .credit-text b { font-weight: 600; font-size: 11px; letter-spacing: .06em; }
 [data-group="family"] .credit-text b { font-weight: inherit; }
+
+/* ---------- Supabase mode: first load, connection, contact markers, admin roster ----------
+   Built from each group's own tokens (radius, rule, primary, gold), so both identities carry through. */
+.skel { display: block; position: relative; overflow: hidden; background: color-mix(in srgb, var(--primary) 8%, var(--surface)); border-radius: var(--r-sm); }
+.skel::after {
+  content: ""; position: absolute; inset: 0; transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--surface) 70%, transparent), transparent);
+  animation: skel-sweep 1.4s ease-in-out infinite;
+}
+@keyframes skel-sweep { to { transform: translateX(100%); } }
+.skel-hero { height: 188px; margin: 4px 0 24px; background: var(--primary); border-radius: var(--r-lg); }
+.skel-hero::after { background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--bg) 12%, transparent), transparent); }
+[data-group="family"] .skel-hero { border-radius: 12px; }
+.skel-line { height: 12px; width: 60%; }
+.skel-sub { width: 38%; height: 10px; margin-top: 6px; opacity: .7; }
+.skel-sec { width: 32%; height: 14px; margin: 22px 0 12px; background: color-mix(in srgb, var(--gold, var(--accent)) 35%, var(--surface)); }
+.skel-dot { width: 36px; height: 36px; border-radius: 50%; flex: none; }
+.skel-row { min-height: 60px; }
+@media (prefers-reduced-motion: reduce) { .skel::after { animation: none; display: none; } }
+
+.conn-row { min-height: 56px; }
+.conn-dot { width: 10px; height: 10px; flex: none; border-radius: 50%; background: var(--s-done); box-shadow: 0 0 0 3px color-mix(in srgb, var(--s-done) 18%, transparent); }
+.conn-dot.off { background: var(--muted); box-shadow: 0 0 0 3px color-mix(in srgb, var(--muted) 18%, transparent); }
+[data-group="entrepreneur"] .conn-dot { border-radius: 2px; }
+
+.miss-tag {
+  display: inline-block; align-self: flex-start; margin-top: 4px; padding: 1px 8px;
+  font-size: 12.5px; font-weight: 700; color: var(--muted); background: transparent;
+  box-shadow: inset 0 0 0 1px var(--gold, var(--accent)); border-radius: 99px;
+}
+.row-title .miss-tag, .row-sub .miss-tag { margin-top: 0; }
+[data-group="entrepreneur"] .miss-tag { border-radius: 3px; font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .08em; font-size: 12px; }
+
+.invite-code {
+  margin: 6px 0 18px; padding: 18px 12px; text-align: center;
+  font-family: var(--display); font-size: 34px; font-weight: 700; letter-spacing: .14em; color: var(--primary);
+  background: var(--paper, var(--surface)); border: 1px solid var(--rule, var(--line)); border-top: 2px solid var(--gold, var(--accent));
+  border-radius: var(--r-md); user-select: all; overflow-wrap: anywhere;
+}
+#ri-copy svg { width: 16px; height: 16px; margin-right: 6px; fill: none; stroke: currentColor; stroke-width: 1.6; vertical-align: -3px; }
+.setup-form { margin-bottom: 4px; }
+.setup-form .btn-block { margin-top: 8px; }
+
+/* A write is on its way: the sheet's save button can't be tapped twice. */
+.mm-busy .sheet .btn-primary, .mm-busy .sheet .btn-danger { pointer-events: none; opacity: .7; }
+/* Waiting on the server (invite check, joining, agreeing to the rules). */
+.btn[aria-busy="true"], .btn:disabled:not(.icon-btn), .gate .row:disabled { opacity: .7; cursor: progress; }
