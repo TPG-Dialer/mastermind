@@ -1,0 +1,1819 @@
+{
+  "members": [
+    {
+      "id": "m1",
+      "name": "Mark Ellison",
+      "role": "admin",
+      "bio": "Retired CPA. Runs the family investment fund and the estate planning.",
+      "focus": "Getting the family trust update signed before Christmas.",
+      "canHelpWith": [
+        "Taxes and retirement accounts",
+        "Reading a contract",
+        "Estate planning basics"
+      ],
+      "workingGenius": {
+        "geniuses": [
+          "D",
+          "G"
+        ],
+        "competencies": [
+          "W",
+          "T"
+        ],
+        "frustrations": [
+          "I",
+          "E"
+        ]
+      }
+    },
+    {
+      "id": "m2",
+      "name": "Linda Ellison",
+      "role": "member",
+      "bio": "Retired teacher. Coordinates the church outreach team.",
+      "focus": "Filling 25 volunteer spots for the Thanksgiving give-back.",
+      "canHelpWith": [
+        "Organizing volunteers",
+        "Editing a letter or resume",
+        "Planning a family event"
+      ],
+      "workingGenius": {
+        "geniuses": [
+          "G",
+          "E"
+        ],
+        "competencies": [
+          "D",
+          "T"
+        ],
+        "frustrations": [
+          "W",
+          "I"
+        ]
+      }
+    },
+    {
+      "id": "m3",
+      "name": "Jake Ellison",
+      "role": "member",
+      "bio": "Line cook testing a food truck with Saturday pop-ups.",
+      "focus": "Proving the truck can do $500 a Saturday before signing a lease.",
+      "canHelpWith": [
+        "Cooking for a crowd",
+        "Social media photos",
+        "Lifting and hauling"
+      ],
+      "workingGenius": {
+        "geniuses": [
+          "I",
+          "G"
+        ],
+        "competencies": [
+          "W",
+          "E"
+        ],
+        "frustrations": [
+          "D",
+          "T"
+        ]
+      }
+    },
+    {
+      "id": "m4",
+      "name": "Sarah Ruiz",
+      "role": "member",
+      "bio": "Runs a bookkeeping practice for small businesses, mostly contractors.",
+      "focus": "Moving every client to the new January pricing.",
+      "canHelpWith": [
+        "QuickBooks setup",
+        "Budgeting",
+        "Small business taxes"
+      ],
+      "workingGenius": {
+        "geniuses": [
+          "D",
+          "E"
+        ],
+        "competencies": [
+          "T",
+          "I"
+        ],
+        "frustrations": [
+          "W",
+          "G"
+        ]
+      }
+    },
+    {
+      "id": "m5",
+      "name": "Daniel Ruiz",
+      "role": "member",
+      "bio": "Electrician. Owns two rental units and a vacant lot.",
+      "focus": "Deciding whether to fix or sell the Maple duplex.",
+      "canHelpWith": [
+        "Electrical and home repair",
+        "Rental property questions",
+        "Finding contractors"
+      ],
+      "workingGenius": null
+    },
+    {
+      "id": "m6",
+      "name": "Emily Ellison",
+      "role": "member",
+      "bio": "Data analyst at a regional insurance company, moving toward product management.",
+      "focus": "Landing a product manager interview by January.",
+      "canHelpWith": [
+        "Spreadsheets and data",
+        "Interview prep",
+        "Online courses that are worth it"
+      ],
+      "workingGenius": {
+        "geniuses": [
+          "W",
+          "D"
+        ],
+        "competencies": [
+          "I",
+          "T"
+        ],
+        "frustrations": [
+          "G",
+          "E"
+        ]
+      }
+    },
+    {
+      "id": "m7",
+      "name": "Ben Ellison",
+      "role": "member",
+      "bio": "High school senior. Mows lawns in the neighborhood on weekends.",
+      "focus": "Pricing out a lawn care business for spring.",
+      "canHelpWith": [
+        "Yard work",
+        "Phone and computer help",
+        "Moving furniture"
+      ],
+      "workingGenius": null
+    },
+    {
+      "id": "m8",
+      "name": "Grace Ellison",
+      "role": "member",
+      "bio": "College sophomore studying nursing. Works part time at the campus clinic.",
+      "focus": "Building a $1,000 emergency fund by May.",
+      "canHelpWith": [
+        "Health questions (non-emergency)",
+        "Babysitting",
+        "Study tips"
+      ],
+      "workingGenius": null
+    },
+    {
+      "id": "m9",
+      "name": "Tom Whitaker",
+      "role": "member",
+      "bio": "Financial analyst at a credit union. Learning the family fund books from Mark.",
+      "focus": "Writing a Q3 fund summary everyone can follow.",
+      "canHelpWith": [
+        "Investing basics",
+        "Loans and credit",
+        "Excel models"
+      ],
+      "workingGenius": {
+        "geniuses": [
+          "I",
+          "D"
+        ],
+        "competencies": [
+          "T",
+          "E"
+        ],
+        "frustrations": [
+          "W",
+          "G"
+        ]
+      }
+    },
+    {
+      "id": "m10",
+      "name": "Hannah Whitaker",
+      "role": "member",
+      "bio": "Nurse practitioner. Organizes the family service days.",
+      "focus": "Getting every cousin to the Nov 21 food bank shift.",
+      "canHelpWith": [
+        "Health questions",
+        "Planning service projects",
+        "Picking good books"
+      ],
+      "workingGenius": {
+        "geniuses": [
+          "E",
+          "W"
+        ],
+        "competencies": [
+          "G",
+          "T"
+        ],
+        "frustrations": [
+          "I",
+          "D"
+        ]
+      }
+    }
+  ],
+  "meetings": [
+    {
+      "id": "f-2026-08",
+      "datetime": "2026-08-09T15:00:00-05:00",
+      "title": "August Shoreline",
+      "agenda": [
+        {
+          "time": 5,
+          "item": "Opening prayer and wins of the month",
+          "owner": "m1"
+        },
+        {
+          "time": 10,
+          "item": "Commitment check-in, round the table",
+          "owner": "all"
+        },
+        {
+          "time": 25,
+          "item": "Hot seat: Jake's food truck permit plan",
+          "owner": "m3"
+        },
+        {
+          "time": 15,
+          "item": "Book discussion: The E-Myth Revisited, ch. 1-4",
+          "owner": "m2"
+        },
+        {
+          "time": 5,
+          "item": "New commitments and close",
+          "owner": "m1"
+        }
+      ],
+      "hotSeatMemberId": "m3",
+      "hotSeatPrep": {
+        "problem": "Should I lease a used truck now or run a pop-up tent at the farmers market for a season first?",
+        "context": "I've saved $14k. A used truck lease is $1,900/month plus a $6k build-out. The farmers market spot is $85 a Saturday.",
+        "whatTried": "Priced three trucks, talked to two owners at the county fair, wrote a rough menu of six items.",
+        "winLooksLike": "A clear yes or no on the truck, and a test I can run before Thanksgiving.",
+        "submittedAt": "2026-08-07T19:30:00-05:00"
+      },
+      "actionPlan": null,
+      "attendance": [
+        "m1",
+        "m2",
+        "m3",
+        "m4",
+        "m5",
+        "m6",
+        "m7",
+        "m8",
+        "m9",
+        "m10"
+      ],
+      "rsvps": []
+    },
+    {
+      "id": "f-2026-09",
+      "datetime": "2026-09-13T15:00:00-05:00",
+      "title": "September Shoreline",
+      "agenda": [
+        {
+          "time": 5,
+          "item": "Opening prayer and wins of the month",
+          "owner": "m1"
+        },
+        {
+          "time": 10,
+          "item": "Commitment check-in, round the table",
+          "owner": "all"
+        },
+        {
+          "time": 25,
+          "item": "Hot seat: Sarah's bookkeeping side business pricing",
+          "owner": "m4"
+        },
+        {
+          "time": 15,
+          "item": "Family investment fund: Q3 review",
+          "owner": "m9"
+        },
+        {
+          "time": 5,
+          "item": "New commitments and close",
+          "owner": "m1"
+        }
+      ],
+      "hotSeatMemberId": "m4",
+      "hotSeatPrep": {
+        "problem": "I have 6 clients at $150/month. Do I raise prices for new clients only, or for everyone in January?",
+        "context": "Every client takes 5-7 hours a month. Local bookkeepers charge $250-400. I'm scared of losing the two church clients.",
+        "whatTried": "Looked up three competitors and tracked my hours for August.",
+        "winLooksLike": "A price I can say out loud without flinching, and a script for telling current clients.",
+        "submittedAt": "2026-09-11T21:15:00-05:00"
+      },
+      "actionPlan": {
+        "adviceTaken": [
+          "Raise new clients to $250 starting now",
+          "Give current clients 60 days notice for January",
+          "Offer the church clients a nonprofit rate"
+        ],
+        "nextStep": "Email all current clients the new January pricing.",
+        "deadline": "2026-10-31",
+        "goalId": "g-m4-1",
+        "savedAt": "2026-09-13T18:50:00-05:00"
+      },
+      "attendance": [
+        "m1",
+        "m2",
+        "m3",
+        "m4",
+        "m5",
+        "m6",
+        "m8",
+        "m9",
+        "m10"
+      ],
+      "rsvps": []
+    },
+    {
+      "id": "f-2026-10",
+      "datetime": "2026-10-11T15:00:00-05:00",
+      "title": "October Shoreline",
+      "agenda": [
+        {
+          "time": 5,
+          "item": "Opening prayer and wins of the month",
+          "owner": "m1"
+        },
+        {
+          "time": 10,
+          "item": "Commitment check-in, round the table",
+          "owner": "all"
+        },
+        {
+          "time": 25,
+          "item": "Hot seat: Daniel's rental property decision",
+          "owner": "m5"
+        },
+        {
+          "time": 15,
+          "item": "Planning the Thanksgiving give-back project",
+          "owner": "m10"
+        },
+        {
+          "time": 5,
+          "item": "New commitments and close",
+          "owner": "m1"
+        }
+      ],
+      "hotSeatMemberId": "m5",
+      "hotSeatPrep": {
+        "problem": "The duplex on Maple needs $18k in repairs. Do we fix and rent it, or sell as-is and put the money into the second lot?",
+        "context": "Bought it in 2019 for $142k. Comparable rentals get $1,150 per side. Roof and one furnace are the big items.",
+        "whatTried": "Got one rough quote and asked a realtor for an as-is number ($205k).",
+        "winLooksLike": "A decision we both feel good about and a deadline to make it by.",
+        "submittedAt": "2026-10-09T20:40:00-05:00"
+      },
+      "actionPlan": {
+        "adviceTaken": [
+          "Get a second contractor bid before deciding",
+          "Run the numbers at 8% vacancy, not zero",
+          "Ask the realtor what a fixed-up unit would sell for",
+          "Decide by the December meeting"
+        ],
+        "nextStep": "Get two contractor bids on the Maple duplex repairs.",
+        "deadline": "2026-11-07",
+        "goalId": "g-m5-1",
+        "savedAt": "2026-10-11T19:20:00-05:00"
+      },
+      "attendance": [
+        "m1",
+        "m2",
+        "m3",
+        "m4",
+        "m5",
+        "m6",
+        "m7",
+        "m9",
+        "m10"
+      ],
+      "rsvps": []
+    },
+    {
+      "id": "f-2026-11",
+      "datetime": "2026-11-08T15:00:00-06:00",
+      "title": "November Shoreline",
+      "agenda": [
+        {
+          "time": 5,
+          "item": "Opening prayer and wins of the month",
+          "owner": "m1"
+        },
+        {
+          "time": 10,
+          "item": "Commitment check-in, round the table",
+          "owner": "all"
+        },
+        {
+          "time": 25,
+          "item": "Hot seat: Emily's career move",
+          "owner": "m6"
+        },
+        {
+          "time": 15,
+          "item": "2027 family goals: first draft",
+          "owner": "m2"
+        },
+        {
+          "time": 5,
+          "item": "New commitments and close",
+          "owner": "m1"
+        }
+      ],
+      "hotSeatMemberId": "m6",
+      "hotSeatPrep": null,
+      "actionPlan": null,
+      "attendance": [],
+      "rsvps": [
+        {
+          "memberId": "m2",
+          "status": "yes"
+        },
+        {
+          "memberId": "m3",
+          "status": "yes"
+        },
+        {
+          "memberId": "m4",
+          "status": "yes"
+        },
+        {
+          "memberId": "m5",
+          "status": "maybe"
+        },
+        {
+          "memberId": "m6",
+          "status": "yes"
+        },
+        {
+          "memberId": "m7",
+          "status": "yes"
+        },
+        {
+          "memberId": "m8",
+          "status": "no"
+        },
+        {
+          "memberId": "m10",
+          "status": "yes"
+        }
+      ]
+    },
+    {
+      "id": "f-2026-12",
+      "datetime": "2026-12-13T15:00:00-06:00",
+      "title": "December Shoreline",
+      "location": {
+        "type": "inperson",
+        "label": "In person",
+        "url": null,
+        "address": "Mark & Linda's house"
+      },
+      "agenda": [
+        {
+          "time": 5,
+          "item": "Opening prayer and year-in-review wins",
+          "owner": "m1"
+        },
+        {
+          "time": 10,
+          "item": "Commitment check-in, round the table",
+          "owner": "all"
+        },
+        {
+          "time": 25,
+          "item": "Hot seat: Ben",
+          "owner": "m7"
+        },
+        {
+          "time": 15,
+          "item": "Lock in 2027 family goals",
+          "owner": "m2"
+        },
+        {
+          "time": 5,
+          "item": "New commitments and close",
+          "owner": "m1"
+        }
+      ],
+      "hotSeatMemberId": "m7",
+      "hotSeatPrep": null,
+      "actionPlan": null,
+      "attendance": [],
+      "rsvps": []
+    },
+    {
+      "id": "f-2027-01",
+      "datetime": "2027-01-10T15:00:00-06:00",
+      "title": "January Shoreline",
+      "agenda": [
+        {
+          "time": 5,
+          "item": "Opening prayer and wins of the month",
+          "owner": "m1"
+        },
+        {
+          "time": 10,
+          "item": "Commitment check-in, round the table",
+          "owner": "all"
+        },
+        {
+          "time": 25,
+          "item": "Hot seat: Grace",
+          "owner": "m8"
+        },
+        {
+          "time": 15,
+          "item": "Choose the 2027 book list",
+          "owner": "m10"
+        },
+        {
+          "time": 5,
+          "item": "New commitments and close",
+          "owner": "m1"
+        }
+      ],
+      "hotSeatMemberId": "m8",
+      "hotSeatPrep": null,
+      "actionPlan": null,
+      "attendance": [],
+      "rsvps": []
+    }
+  ],
+  "commitments": [
+    {
+      "id": "c-f8-m1",
+      "memberId": "m1",
+      "meetingId": "f-2026-08",
+      "text": "Call three estate attorneys and pick one.",
+      "status": "done",
+      "updatedAt": "2026-08-28T10:00:00-05:00",
+      "lastUpdateNote": "Going with Carla Benson.",
+      "goalId": "g-m1-1"
+    },
+    {
+      "id": "c-f8-m2",
+      "memberId": "m2",
+      "meetingId": "f-2026-08",
+      "text": "Ask the church office for dates for the give-back project.",
+      "status": "done",
+      "updatedAt": "2026-08-20T12:00:00-05:00",
+      "lastUpdateNote": "Nov 21 is open.",
+      "goalId": "g-m2-1"
+    },
+    {
+      "id": "c-f8-m3",
+      "memberId": "m3",
+      "meetingId": "f-2026-08",
+      "text": "Book a farmers market spot for September.",
+      "status": "done",
+      "updatedAt": "2026-08-15T09:00:00-05:00",
+      "lastUpdateNote": "Got four Saturdays.",
+      "goalId": "g-m3-1"
+    },
+    {
+      "id": "c-f8-m4",
+      "memberId": "m4",
+      "meetingId": "f-2026-08",
+      "text": "Track hours for every client in August.",
+      "status": "done",
+      "updatedAt": "2026-09-01T08:00:00-05:00",
+      "lastUpdateNote": "Averaging 6 hrs per client.",
+      "goalId": "g-m4-1"
+    },
+    {
+      "id": "c-f8-m5",
+      "memberId": "m5",
+      "meetingId": "f-2026-08",
+      "text": "Get the Maple duplex inspected.",
+      "status": "done",
+      "updatedAt": "2026-09-05T14:00:00-05:00",
+      "lastUpdateNote": "Roof and furnace flagged.",
+      "goalId": "g-m5-1"
+    },
+    {
+      "id": "c-f8-m6",
+      "memberId": "m6",
+      "meetingId": "f-2026-08",
+      "text": "Sign up for the PM certificate course.",
+      "status": "done",
+      "updatedAt": "2026-08-18T21:00:00-05:00",
+      "lastUpdateNote": "Starts Sept 2.",
+      "goalId": "g-m6-2"
+    },
+    {
+      "id": "c-f8-m7",
+      "memberId": "m7",
+      "meetingId": "f-2026-08",
+      "text": "Read The E-Myth Revisited chapters 1-4.",
+      "status": "not_started",
+      "updatedAt": "2026-08-09T17:00:00-05:00",
+      "lastUpdateNote": "",
+      "goalId": "g-m7-1"
+    },
+    {
+      "id": "c-f8-m8",
+      "memberId": "m8",
+      "meetingId": "f-2026-08",
+      "text": "Open a savings account just for emergencies.",
+      "status": "done",
+      "updatedAt": "2026-08-22T16:00:00-05:00",
+      "lastUpdateNote": "$150 in so far.",
+      "goalId": "g-m8-1"
+    },
+    {
+      "id": "c-f8-m9",
+      "memberId": "m9",
+      "meetingId": "f-2026-08",
+      "text": "Sit with Mark for an hour on the fund spreadsheet.",
+      "status": "done",
+      "updatedAt": "2026-08-30T11:00:00-05:00",
+      "lastUpdateNote": "",
+      "goalId": "g-m9-2"
+    },
+    {
+      "id": "c-f8-m10",
+      "memberId": "m10",
+      "meetingId": "f-2026-08",
+      "text": "Call the food bank about a family shift.",
+      "status": "in_progress",
+      "updatedAt": "2026-08-25T13:00:00-05:00",
+      "lastUpdateNote": "Left a message.",
+      "goalId": "g-m10-1"
+    },
+    {
+      "id": "c-f9-m1",
+      "memberId": "m1",
+      "meetingId": "f-2026-09",
+      "text": "Send Carla our current trust documents.",
+      "status": "done",
+      "updatedAt": "2026-09-20T10:00:00-05:00",
+      "lastUpdateNote": "",
+      "goalId": "g-m1-1"
+    },
+    {
+      "id": "c-f9-m2",
+      "memberId": "m2",
+      "meetingId": "f-2026-09",
+      "text": "Draft the volunteer sign-up sheet.",
+      "status": "done",
+      "updatedAt": "2026-10-02T19:00:00-05:00",
+      "lastUpdateNote": "",
+      "goalId": "g-m2-1"
+    },
+    {
+      "id": "c-f9-m3",
+      "memberId": "m3",
+      "meetingId": "f-2026-09",
+      "text": "Run the first two pop-ups and write down every sale.",
+      "status": "done",
+      "updatedAt": "2026-10-05T20:00:00-05:00",
+      "lastUpdateNote": "$412 and $538.",
+      "goalId": "g-m3-1"
+    },
+    {
+      "id": "c-f9-m4",
+      "memberId": "m4",
+      "meetingId": "f-2026-09",
+      "text": "Set new client price at $250 and update my website.",
+      "status": "done",
+      "updatedAt": "2026-09-18T09:30:00-05:00",
+      "lastUpdateNote": "",
+      "goalId": "g-m4-1"
+    },
+    {
+      "id": "c-f9-m5",
+      "memberId": "m5",
+      "meetingId": "f-2026-09",
+      "text": "Get a realtor's as-is price on the duplex.",
+      "status": "done",
+      "updatedAt": "2026-10-01T15:00:00-05:00",
+      "lastUpdateNote": "$205k.",
+      "goalId": "g-m5-1"
+    },
+    {
+      "id": "c-f9-m6",
+      "memberId": "m6",
+      "meetingId": "f-2026-09",
+      "text": "Finish modules 1-3 of the PM course.",
+      "status": "done",
+      "updatedAt": "2026-10-06T22:00:00-05:00",
+      "lastUpdateNote": "",
+      "goalId": "g-m6-2"
+    },
+    {
+      "id": "c-f9-m7",
+      "memberId": "m7",
+      "meetingId": "f-2026-09",
+      "text": "Read The E-Myth Revisited chapters 1-4.",
+      "status": "done",
+      "updatedAt": "2026-10-08T21:00:00-05:00",
+      "lastUpdateNote": "Finally done.",
+      "goalId": "g-m7-1"
+    },
+    {
+      "id": "c-f9-m8",
+      "memberId": "m8",
+      "meetingId": "f-2026-09",
+      "text": "Get the emergency fund to $400.",
+      "status": "in_progress",
+      "updatedAt": "2026-10-04T18:00:00-05:00",
+      "lastUpdateNote": "At $320.",
+      "goalId": "g-m8-1"
+    },
+    {
+      "id": "c-f9-m9",
+      "memberId": "m9",
+      "meetingId": "f-2026-09",
+      "text": "Close out Q3 numbers for the family fund.",
+      "status": "done",
+      "updatedAt": "2026-10-07T08:00:00-05:00",
+      "lastUpdateNote": "",
+      "goalId": "g-m9-1"
+    },
+    {
+      "id": "c-f9-m10",
+      "memberId": "m10",
+      "meetingId": "f-2026-09",
+      "text": "Get a yes from the food bank on Nov 21.",
+      "status": "done",
+      "updatedAt": "2026-09-29T12:00:00-05:00",
+      "lastUpdateNote": "They said yes for 12 people.",
+      "goalId": "g-m10-1"
+    },
+    {
+      "id": "c-f10-m1",
+      "memberId": "m1",
+      "meetingId": "f-2026-10",
+      "text": "Meet with the estate attorney and get a draft of the family trust update.",
+      "status": "done",
+      "updatedAt": "2026-10-24T10:15:00-05:00",
+      "lastUpdateNote": "Met Tuesday. Draft arrives next week.",
+      "goalId": "g-m1-1"
+    },
+    {
+      "id": "c-f10-m2",
+      "memberId": "m2",
+      "meetingId": "f-2026-10",
+      "text": "Finish the Thanksgiving give-back sign-up sheet and send it to the church office.",
+      "status": "done",
+      "updatedAt": "2026-10-19T18:40:00-05:00",
+      "lastUpdateNote": "Sent. 14 volunteers so far.",
+      "goalId": "g-m2-1"
+    },
+    {
+      "id": "c-f10-m3",
+      "memberId": "m3",
+      "meetingId": "f-2026-10",
+      "text": "Run three Saturday pop-ups and track sales per hour.",
+      "status": "in_progress",
+      "updatedAt": "2026-10-26T20:05:00-05:00",
+      "lastUpdateNote": "Two done: $412 and $538. Last one is Nov 1.",
+      "goalId": "g-m3-1"
+    },
+    {
+      "id": "c-f10-m4",
+      "memberId": "m4",
+      "meetingId": "f-2026-10",
+      "text": "Email all current clients the new January pricing.",
+      "status": "done",
+      "updatedAt": "2026-10-15T09:30:00-05:00",
+      "lastUpdateNote": "All 6 replied. Nobody left.",
+      "goalId": "g-m4-1"
+    },
+    {
+      "id": "c-f10-m5",
+      "memberId": "m5",
+      "meetingId": "f-2026-10",
+      "text": "Get two contractor bids on the Maple duplex repairs.",
+      "status": "in_progress",
+      "updatedAt": "2026-10-22T12:00:00-05:00",
+      "lastUpdateNote": "One bid in at $16,400. Waiting on the second.",
+      "goalId": "g-m5-1"
+    },
+    {
+      "id": "c-f10-m6",
+      "memberId": "m6",
+      "meetingId": "f-2026-10",
+      "text": "Update my resume and have coffee with two people in product management.",
+      "status": "in_progress",
+      "updatedAt": "2026-10-20T07:50:00-05:00",
+      "lastUpdateNote": "Resume done. Coffee booked for Nov 3.",
+      "goalId": "g-m6-1"
+    },
+    {
+      "id": "c-f10-m7",
+      "memberId": "m7",
+      "meetingId": "f-2026-10",
+      "text": "Read The E-Myth Revisited chapters 5-8 and bring one idea to apply.",
+      "status": "not_started",
+      "updatedAt": "2026-10-11T17:00:00-05:00",
+      "lastUpdateNote": "",
+      "goalId": "g-m7-1"
+    },
+    {
+      "id": "c-f10-m8",
+      "memberId": "m8",
+      "meetingId": "f-2026-10",
+      "text": "Open a Roth IRA and set up a $100/month auto-deposit.",
+      "status": "done",
+      "updatedAt": "2026-10-13T21:10:00-05:00",
+      "lastUpdateNote": "Opened with Fidelity. First deposit Nov 1.",
+      "goalId": "g-m8-2"
+    },
+    {
+      "id": "c-f10-m9",
+      "memberId": "m9",
+      "meetingId": "f-2026-10",
+      "text": "Write up the Q3 family fund summary and share it before November.",
+      "status": "done",
+      "updatedAt": "2026-10-28T08:20:00-05:00",
+      "lastUpdateNote": "Shared in the family email. Up 4.1% for Q3.",
+      "goalId": "g-m9-1"
+    },
+    {
+      "id": "c-f10-m10",
+      "memberId": "m10",
+      "meetingId": "f-2026-10",
+      "text": "Book the food bank shift for the whole family on Nov 21.",
+      "status": "not_started",
+      "updatedAt": "2026-10-11T17:00:00-05:00",
+      "lastUpdateNote": "",
+      "goalId": "g-m10-1"
+    }
+  ],
+  "goals": [
+    {
+      "id": "g-m1-1",
+      "memberId": "m1",
+      "period": "Q4 2026",
+      "title": "Finish the family trust update",
+      "why": "So nobody has to guess what we wanted.",
+      "targetDate": "2026-12-15",
+      "status": "active",
+      "accountabilityAsk": "Ask me each month if the attorney has the latest draft."
+    },
+    {
+      "id": "g-m1-2",
+      "memberId": "m1",
+      "period": "Q4 2026",
+      "title": "Hand off the investment fund books to Tom",
+      "why": "Two people should know how it works, not one.",
+      "targetDate": "2026-12-31",
+      "status": "active",
+      "accountabilityAsk": ""
+    },
+    {
+      "id": "g-m2-1",
+      "memberId": "m2",
+      "period": "Q4 2026",
+      "title": "Run the Thanksgiving give-back with 25 volunteers",
+      "why": "Last year we had 11. I want the grandkids involved.",
+      "targetDate": "2026-11-26",
+      "status": "active",
+      "accountabilityAsk": "Hold me to sending the reminder emails on time."
+    },
+    {
+      "id": "g-m2-2",
+      "memberId": "m2",
+      "period": "2027",
+      "title": "Lead the 2027 family goals session",
+      "why": "We keep saying we'll write them down.",
+      "targetDate": "2027-01-10",
+      "status": "active",
+      "accountabilityAsk": ""
+    },
+    {
+      "id": "g-m3-1",
+      "memberId": "m3",
+      "period": "Q4 2026",
+      "title": "Prove the food truck idea with real sales",
+      "why": "I want numbers, not a hunch, before I sign a lease.",
+      "targetDate": "2026-12-31",
+      "status": "active",
+      "accountabilityAsk": "Ask me every meeting for my sales-per-hour number."
+    },
+    {
+      "id": "g-m3-2",
+      "memberId": "m3",
+      "period": "2027",
+      "title": "Save $20k for the truck down payment",
+      "why": "No loan for the build-out.",
+      "targetDate": "2027-06-30",
+      "status": "active",
+      "accountabilityAsk": ""
+    },
+    {
+      "id": "g-m4-1",
+      "memberId": "m4",
+      "period": "Q4 2026",
+      "title": "Grow the bookkeeping business to $2,500/month",
+      "why": "Enough to drop my Saturday job.",
+      "targetDate": "2026-12-31",
+      "status": "active",
+      "accountabilityAsk": "Ask me how many new clients I talked to this month."
+    },
+    {
+      "id": "g-m4-2",
+      "memberId": "m4",
+      "period": "Q4 2026",
+      "title": "Take on two new clients",
+      "why": "Price increase only works if new clients say yes too.",
+      "targetDate": "2026-12-31",
+      "status": "active",
+      "accountabilityAsk": ""
+    },
+    {
+      "id": "g-m5-1",
+      "memberId": "m5",
+      "period": "Q4 2026",
+      "title": "Decide on the Maple duplex",
+      "why": "It's been sitting for a year. Fix it or sell it.",
+      "targetDate": "2026-12-13",
+      "status": "active",
+      "accountabilityAsk": "Don't let me push the decision past December."
+    },
+    {
+      "id": "g-m5-2",
+      "memberId": "m5",
+      "period": "2027",
+      "title": "Get the second lot surveyed",
+      "why": "Needed before any building plans.",
+      "targetDate": "2027-03-31",
+      "status": "paused",
+      "accountabilityAsk": ""
+    },
+    {
+      "id": "g-m6-1",
+      "memberId": "m6",
+      "period": "2027",
+      "title": "Land a product manager role",
+      "why": "I've been an analyst for six years. Time to move.",
+      "targetDate": "2027-03-31",
+      "status": "active",
+      "accountabilityAsk": "Ask me how many coffee chats I had this month."
+    },
+    {
+      "id": "g-m6-2",
+      "memberId": "m6",
+      "period": "Q4 2026",
+      "title": "Finish the product management certificate",
+      "why": "Gives me something concrete on the resume.",
+      "targetDate": "2026-12-20",
+      "status": "active",
+      "accountabilityAsk": ""
+    },
+    {
+      "id": "g-m7-1",
+      "memberId": "m7",
+      "period": "Q4 2026",
+      "title": "Read four business books this year",
+      "why": "I want to learn before I start something.",
+      "targetDate": "2026-12-31",
+      "status": "active",
+      "accountabilityAsk": "Ask me which chapter I'm on."
+    },
+    {
+      "id": "g-m7-2",
+      "memberId": "m7",
+      "period": "2027",
+      "title": "Price out a lawn care side business",
+      "why": "Spring is when it would start.",
+      "targetDate": "2027-02-28",
+      "status": "active",
+      "accountabilityAsk": ""
+    },
+    {
+      "id": "g-m8-1",
+      "memberId": "m8",
+      "period": "Q4 2026",
+      "title": "Build a $1,000 emergency fund",
+      "why": "So one car repair doesn't wreck the semester.",
+      "targetDate": "2026-12-31",
+      "status": "active",
+      "accountabilityAsk": "Ask me my balance each meeting."
+    },
+    {
+      "id": "g-m8-2",
+      "memberId": "m8",
+      "period": "Q4 2026",
+      "title": "Start investing every month",
+      "why": "Grandpa says the earlier the better.",
+      "targetDate": "2026-11-01",
+      "status": "done",
+      "accountabilityAsk": ""
+    },
+    {
+      "id": "g-m9-1",
+      "memberId": "m9",
+      "period": "Q4 2026",
+      "title": "Publish clear quarterly reports for the family fund",
+      "why": "Everyone should understand where the money is.",
+      "targetDate": "2026-12-31",
+      "status": "active",
+      "accountabilityAsk": "Ask me if the Q4 report went out by January 15."
+    },
+    {
+      "id": "g-m9-2",
+      "memberId": "m9",
+      "period": "Q4 2026",
+      "title": "Learn the fund books from Mark",
+      "why": "So it doesn't all sit with one person.",
+      "targetDate": "2026-12-31",
+      "status": "active",
+      "accountabilityAsk": ""
+    },
+    {
+      "id": "g-m10-1",
+      "memberId": "m10",
+      "period": "Q4 2026",
+      "title": "Get every family member to one service day",
+      "why": "Giving back together is the point.",
+      "targetDate": "2026-11-21",
+      "status": "active",
+      "accountabilityAsk": "Ask me if the food bank shift is booked."
+    },
+    {
+      "id": "g-m10-2",
+      "memberId": "m10",
+      "period": "2027",
+      "title": "Pick a 2027 book list everyone will read",
+      "why": "Last year's list was too long.",
+      "targetDate": "2027-01-10",
+      "status": "active",
+      "accountabilityAsk": ""
+    }
+  ],
+  "checkins": [
+    {
+      "id": "k-f-2026-10-m1",
+      "meetingId": "f-2026-10",
+      "memberId": "m1",
+      "win": "Picked our estate attorney and sent her everything.",
+      "challenge": "Getting everyone's schedules lined up for the trust meeting.",
+      "submittedAt": "2026-10-10T20:00:00-05:00"
+    },
+    {
+      "id": "k-f-2026-10-m2",
+      "meetingId": "f-2026-10",
+      "memberId": "m2",
+      "win": "Church approved Nov 21 for the give-back.",
+      "challenge": "Not enough volunteers under 30 yet.",
+      "submittedAt": "2026-10-09T18:30:00-05:00"
+    },
+    {
+      "id": "k-f-2026-10-m3",
+      "meetingId": "f-2026-10",
+      "memberId": "m3",
+      "win": "Two pop-ups, $950 in sales.",
+      "challenge": "Running out of food by 1pm both times.",
+      "submittedAt": "2026-10-10T22:10:00-05:00"
+    },
+    {
+      "id": "k-f-2026-10-m4",
+      "meetingId": "f-2026-10",
+      "memberId": "m4",
+      "win": "Two new clients signed at $250.",
+      "challenge": "Writing the price email to the old clients.",
+      "submittedAt": "2026-10-08T07:45:00-05:00"
+    },
+    {
+      "id": "k-f-2026-10-m5",
+      "meetingId": "f-2026-10",
+      "memberId": "m5",
+      "win": "Realtor came back at $205k as-is.",
+      "challenge": "Linda and I don't agree yet on fix vs sell.",
+      "submittedAt": "2026-10-09T20:45:00-05:00"
+    },
+    {
+      "id": "k-f-2026-10-m6",
+      "meetingId": "f-2026-10",
+      "memberId": "m6",
+      "win": "Finished half the PM course.",
+      "challenge": "No time for coffee chats with the new project at work.",
+      "submittedAt": "2026-10-10T21:00:00-05:00"
+    },
+    {
+      "id": "k-f-2026-10-m9",
+      "meetingId": "f-2026-10",
+      "memberId": "m9",
+      "win": "Q3 fund numbers closed, up 4.1%.",
+      "challenge": "Explaining the bond fund drop simply.",
+      "submittedAt": "2026-10-11T09:30:00-05:00"
+    },
+    {
+      "id": "k-f-2026-10-m10",
+      "meetingId": "f-2026-10",
+      "memberId": "m10",
+      "win": "Food bank said yes to the whole family on Nov 21.",
+      "challenge": "Getting the cousins to commit.",
+      "submittedAt": "2026-10-11T14:50:00-05:00"
+    },
+    {
+      "id": "k-f-2026-11-m2",
+      "meetingId": "f-2026-11",
+      "memberId": "m2",
+      "win": "14 volunteers signed up, including three grandkids.",
+      "challenge": "Finding a second van for the drive.",
+      "submittedAt": "2026-10-27T19:10:00-05:00"
+    },
+    {
+      "id": "k-f-2026-11-m4",
+      "meetingId": "f-2026-11",
+      "memberId": "m4",
+      "win": "All six clients agreed to the January price.",
+      "challenge": "Keeping up with month-end now that I'm busier.",
+      "submittedAt": "2026-10-28T08:05:00-05:00"
+    },
+    {
+      "id": "k-f-2026-11-m9",
+      "meetingId": "f-2026-11",
+      "memberId": "m9",
+      "win": "Q3 report out and everyone opened it.",
+      "challenge": "Tracking down the old brokerage statements.",
+      "submittedAt": "2026-10-29T07:30:00-05:00"
+    },
+    {
+      "id": "k-f-2026-11-m10",
+      "meetingId": "f-2026-11",
+      "memberId": "m10",
+      "win": "Ordered matching volunteer t-shirts.",
+      "challenge": "Still need to book the food bank shift online.",
+      "submittedAt": "2026-10-30T12:15:00-05:00"
+    }
+  ],
+  "asks": [
+    {
+      "id": "a-f1",
+      "memberId": "m3",
+      "title": "Anyone know a commercial kitchen I can rent by the hour?",
+      "detail": "The pop-ups are outgrowing Mom's kitchen. Looking for something near Elm Grove under $25/hour.",
+      "createdAt": "2026-10-27T18:20:00-05:00",
+      "status": "open",
+      "replies": [
+        {
+          "memberId": "m2",
+          "text": "The church kitchen sits empty on weekdays. I'll ask Pastor Dave.",
+          "createdAt": "2026-10-27T19:05:00-05:00",
+          "canHelp": true
+        },
+        {
+          "memberId": "m9",
+          "text": "Try the culinary school on 4th. They rented to a caterer we know.",
+          "createdAt": "2026-10-28T08:40:00-05:00",
+          "canHelp": false
+        }
+      ],
+      "needs": "hands"
+    },
+    {
+      "id": "a-f2",
+      "memberId": "m6",
+      "title": "Mock interview for a product manager role",
+      "detail": "I have a first-round interview on Nov 12. Would love 30 minutes with someone who's hired people before.",
+      "createdAt": "2026-10-29T21:00:00-05:00",
+      "status": "open",
+      "replies": [],
+      "needs": null
+    },
+    {
+      "id": "a-f3",
+      "memberId": "m10",
+      "title": "Need a second van for Nov 21",
+      "detail": "We have 14 people going to the food bank and room for 8.",
+      "createdAt": "2026-10-24T10:30:00-05:00",
+      "status": "open",
+      "replies": [
+        {
+          "memberId": "m5",
+          "text": "Our minivan seats 7. It's yours that day.",
+          "createdAt": "2026-10-24T12:00:00-05:00",
+          "canHelp": true
+        }
+      ],
+      "needs": "hands"
+    },
+    {
+      "id": "a-f4",
+      "memberId": "m8",
+      "title": "Which Roth IRA provider should I use?",
+      "detail": "Fidelity, Vanguard or Schwab? I want low fees and an app that's easy.",
+      "createdAt": "2026-10-05T16:00:00-05:00",
+      "status": "resolved",
+      "replies": [
+        {
+          "memberId": "m9",
+          "text": "Any of the three is fine. Fidelity has no minimum and a good app.",
+          "createdAt": "2026-10-05T18:30:00-05:00",
+          "canHelp": true
+        },
+        {
+          "memberId": "m1",
+          "text": "Pick a target-date fund and leave it alone.",
+          "createdAt": "2026-10-06T07:15:00-05:00",
+          "canHelp": false
+        }
+      ],
+      "needs": "deciding"
+    }
+  ],
+  "announcements": [
+    {
+      "id": "an-f1",
+      "authorId": "m1",
+      "title": "November meeting moves to the Whitakers'",
+      "body": "Our kitchen is getting new floors that week, so Hannah and Tom are hosting Nov 8. Same time, 3:00. Bring a chair if you have a folding one. Linda is doing chili, so sides and desserts are welcome.",
+      "createdAt": "2026-10-29T09:15:00-05:00",
+      "pinned": true,
+      "comments": [
+        {
+          "memberId": "m10",
+          "text": "We're excited. Park on the street, the driveway will be full of the van.",
+          "createdAt": "2026-10-29T10:02:00-05:00"
+        },
+        {
+          "memberId": "m3",
+          "text": "I'll bring cornbread from the pop-up batch.",
+          "createdAt": "2026-10-29T12:40:00-05:00"
+        },
+        {
+          "memberId": "m8",
+          "text": "I can come straight from the clinic, might be 15 min late.",
+          "createdAt": "2026-10-30T08:10:00-05:00"
+        }
+      ]
+    },
+    {
+      "id": "an-f2",
+      "authorId": "m10",
+      "title": "Food bank shift is confirmed for Nov 21",
+      "body": "We have the 9:00 to 12:00 shift at Northside Food Bank for all of us. Closed-toe shoes, no jewelry. Kids 10 and up can work the sorting line. Lunch at Mom and Dad's after.",
+      "createdAt": "2026-10-27T19:30:00-05:00",
+      "pinned": false,
+      "comments": [
+        {
+          "memberId": "m2",
+          "text": "Thank you for setting this up. This is my favorite day of the year.",
+          "createdAt": "2026-10-27T20:05:00-05:00"
+        },
+        {
+          "memberId": "m7",
+          "text": "Can I bring my friend Marcus? He needs service hours.",
+          "createdAt": "2026-10-28T16:22:00-05:00"
+        },
+        {
+          "memberId": "m10",
+          "text": "Yes! Just send me his full name for the sign-in list.",
+          "createdAt": "2026-10-28T17:01:00-05:00"
+        }
+      ]
+    },
+    {
+      "id": "an-f3",
+      "authorId": "m9",
+      "title": "Q3 family fund summary is ready",
+      "body": "The fund finished the quarter up 4.1%. I wrote a one-page summary with a plain-English note on why the bond fund dipped. Paper copies at the meeting, or ask me for the PDF.",
+      "createdAt": "2026-10-24T14:00:00-05:00",
+      "pinned": false,
+      "comments": [
+        {
+          "memberId": "m1",
+          "text": "Clear and short. This is exactly what we needed.",
+          "createdAt": "2026-10-24T15:10:00-05:00"
+        }
+      ]
+    },
+    {
+      "id": "an-f4",
+      "authorId": "m1",
+      "title": "Welcome to the app",
+      "body": "This is where we'll keep the agenda, our commitments and the hot seat schedule from now on. Check in before each meeting and keep your commitment status current. Questions go to me or Emily.",
+      "createdAt": "2026-10-05T18:00:00-05:00",
+      "pinned": false,
+      "comments": [
+        {
+          "memberId": "m6",
+          "text": "Happy to help anyone get it on their phone.",
+          "createdAt": "2026-10-05T19:12:00-05:00"
+        }
+      ]
+    }
+  ],
+  "ideas": [
+    {
+      "id": "i-f1",
+      "memberId": "m4",
+      "type": "tool",
+      "title": "Wave for simple invoicing",
+      "note": "Free invoicing that a lot of my small clients use. Good for Jake once the truck takes catering orders.",
+      "url": "https://www.waveapps.com",
+      "createdAt": "2026-10-28T11:00:00-05:00",
+      "likes": [
+        "m3",
+        "m5"
+      ],
+      "comments": [
+        {
+          "memberId": "m3",
+          "text": "Signing up this week.",
+          "createdAt": "2026-10-28T13:20:00-05:00"
+        }
+      ]
+    },
+    {
+      "id": "i-f2",
+      "memberId": "m6",
+      "type": "podcast",
+      "title": "How I Built This: the Chobani episode",
+      "note": "A small-town factory bought with an SBA loan. Made me think of Daniel's lot.",
+      "url": "https://www.npr.org/podcasts/510313/how-i-built-this",
+      "createdAt": "2026-10-25T21:00:00-05:00",
+      "likes": [
+        "m5",
+        "m1",
+        "m9"
+      ],
+      "comments": []
+    },
+    {
+      "id": "i-f3",
+      "memberId": "m2",
+      "type": "idea",
+      "title": "Write our family mission in one sentence",
+      "note": "Before we set 2027 goals, agree on one sentence about why this group exists. Then each goal should point at it.",
+      "url": "",
+      "createdAt": "2026-10-22T08:30:00-05:00",
+      "likes": [
+        "m1",
+        "m10",
+        "m6",
+        "m9"
+      ],
+      "comments": [
+        {
+          "memberId": "m1",
+          "text": "Let's put it on the November agenda.",
+          "createdAt": "2026-10-22T09:00:00-05:00"
+        },
+        {
+          "memberId": "m10",
+          "text": "I'll bring a few examples from other families.",
+          "createdAt": "2026-10-22T12:15:00-05:00"
+        }
+      ]
+    },
+    {
+      "id": "i-f4",
+      "memberId": "m9",
+      "type": "article",
+      "title": "Roth IRA for students: the 5-minute version",
+      "note": "Grace asked about this. Short, no sales pitch.",
+      "url": "https://www.investor.gov/introduction-investing",
+      "createdAt": "2026-10-20T19:45:00-05:00",
+      "likes": [
+        "m8"
+      ],
+      "comments": [
+        {
+          "memberId": "m8",
+          "text": "This helped. Opening mine Monday.",
+          "createdAt": "2026-10-21T10:30:00-05:00"
+        }
+      ]
+    },
+    {
+      "id": "i-f5",
+      "memberId": "m3",
+      "type": "idea",
+      "title": "Pre-orders by text for Saturday pop-ups",
+      "note": "I keep running out by 1pm. Taking pre-orders on Friday night would tell me how much to cook.",
+      "url": "",
+      "createdAt": "2026-10-18T22:10:00-05:00",
+      "likes": [
+        "m4",
+        "m6"
+      ],
+      "comments": []
+    },
+    {
+      "id": "i-f6",
+      "memberId": "m5",
+      "type": "link",
+      "title": "County permit lookup",
+      "note": "You can see every permit pulled on a property. Useful before buying anything older.",
+      "url": "https://www.example.gov/permits",
+      "createdAt": "2026-10-12T17:00:00-05:00",
+      "likes": [
+        "m1"
+      ],
+      "comments": []
+    },
+    {
+      "id": "i-f7",
+      "memberId": "m7",
+      "type": "other",
+      "title": "Lawn care price sheet from Tyler's dad",
+      "note": "He charges $45 a cut for a quarter acre and $120 for leaf cleanup. I'm going to start lower.",
+      "url": "",
+      "createdAt": "2026-10-09T16:00:00-05:00",
+      "likes": [],
+      "comments": [
+        {
+          "memberId": "m4",
+          "text": "Don't start too low. It's hard to raise later.",
+          "createdAt": "2026-10-09T18:30:00-05:00"
+        }
+      ]
+    }
+  ],
+  "books": [
+    {
+      "id": "b-f1",
+      "title": "The Psychology of Money",
+      "author": "Morgan Housel",
+      "suggestedBy": "m9",
+      "why": "Short chapters, no math. Best book I know for getting the whole family on the same page about money.",
+      "createdAt": "2026-09-14T10:00:00-05:00",
+      "groupBook": true,
+      "comments": [
+        {
+          "memberId": "m8",
+          "text": "Chapter on 'enough' hit me hard.",
+          "createdAt": "2026-10-15T21:00:00-05:00"
+        },
+        {
+          "memberId": "m1",
+          "text": "Read it twice. Let's discuss chapter 6 in November.",
+          "createdAt": "2026-10-20T07:40:00-05:00"
+        }
+      ]
+    },
+    {
+      "id": "b-f2",
+      "title": "The E-Myth Revisited",
+      "author": "Michael E. Gerber",
+      "suggestedBy": "m4",
+      "why": "Every small business owner I work with should read it before they hire anyone.",
+      "createdAt": "2026-08-10T12:00:00-05:00",
+      "groupBook": false,
+      "comments": [
+        {
+          "memberId": "m7",
+          "text": "The part about working on vs in your business is my commitment this month.",
+          "createdAt": "2026-10-12T19:00:00-05:00"
+        }
+      ]
+    },
+    {
+      "id": "b-f3",
+      "title": "Atomic Habits",
+      "author": "James Clear",
+      "suggestedBy": "m2",
+      "why": "Small habits are how we keep commitments between meetings.",
+      "createdAt": "2026-07-01T09:00:00-05:00",
+      "groupBook": false,
+      "comments": []
+    },
+    {
+      "id": "b-f4",
+      "title": "Die With Zero",
+      "author": "Bill Perkins",
+      "suggestedBy": "m1",
+      "why": "Challenges how Linda and I think about giving while we're alive. I'd like the kids' take.",
+      "createdAt": "2026-10-02T15:00:00-05:00",
+      "groupBook": false,
+      "comments": [
+        {
+          "memberId": "m10",
+          "text": "Controversial pick, Dad. I'm in.",
+          "createdAt": "2026-10-02T18:00:00-05:00"
+        }
+      ]
+    },
+    {
+      "id": "b-f5",
+      "title": "Inspired",
+      "author": "Marty Cagan",
+      "suggestedBy": "m6",
+      "why": "The book every product manager interview seems to assume you've read.",
+      "createdAt": "2026-09-20T20:00:00-05:00",
+      "groupBook": false,
+      "comments": []
+    },
+    {
+      "id": "b-f6",
+      "title": "Kitchen Confidential",
+      "author": "Anthony Bourdain",
+      "suggestedBy": "m3",
+      "why": "What working a line is really like. Fun read even if you never cook.",
+      "createdAt": "2026-10-19T23:00:00-05:00",
+      "groupBook": false,
+      "comments": []
+    },
+    {
+      "id": "b-f7",
+      "title": "The Richest Man in Babylon",
+      "author": "George S. Clason",
+      "suggestedBy": "m2",
+      "why": "Grandpa gave me this at 18. Old, short and still right.",
+      "createdAt": "2026-06-15T10:00:00-05:00",
+      "groupBook": false,
+      "comments": [
+        {
+          "memberId": "m8",
+          "text": "Finished it on the bus. Pay yourself first.",
+          "createdAt": "2026-09-30T08:00:00-05:00"
+        }
+      ]
+    }
+  ],
+  "readingList": [
+    {
+      "bookId": "b-f1",
+      "memberId": "m1",
+      "status": "finished",
+      "updatedAt": "2026-10-01T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-f1",
+      "memberId": "m9",
+      "status": "finished",
+      "updatedAt": "2026-10-02T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-f1",
+      "memberId": "m8",
+      "status": "reading",
+      "updatedAt": "2026-10-03T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-f1",
+      "memberId": "m2",
+      "status": "reading",
+      "updatedAt": "2026-10-04T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-f1",
+      "memberId": "m4",
+      "status": "reading",
+      "updatedAt": "2026-10-05T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-f1",
+      "memberId": "m10",
+      "status": "finished",
+      "updatedAt": "2026-10-06T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-f1",
+      "memberId": "m6",
+      "status": "want",
+      "updatedAt": "2026-10-07T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-f1",
+      "memberId": "m3",
+      "status": "want",
+      "updatedAt": "2026-10-08T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-f2",
+      "memberId": "m7",
+      "status": "reading",
+      "updatedAt": "2026-10-09T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-f2",
+      "memberId": "m4",
+      "status": "finished",
+      "updatedAt": "2026-10-10T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-f2",
+      "memberId": "m3",
+      "status": "want",
+      "updatedAt": "2026-10-11T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-f2",
+      "memberId": "m1",
+      "status": "finished",
+      "updatedAt": "2026-10-12T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-f3",
+      "memberId": "m2",
+      "status": "finished",
+      "updatedAt": "2026-10-13T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-f3",
+      "memberId": "m10",
+      "status": "finished",
+      "updatedAt": "2026-10-14T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-f3",
+      "memberId": "m6",
+      "status": "finished",
+      "updatedAt": "2026-10-15T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-f3",
+      "memberId": "m7",
+      "status": "want",
+      "updatedAt": "2026-10-16T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-f4",
+      "memberId": "m10",
+      "status": "want",
+      "updatedAt": "2026-10-17T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-f4",
+      "memberId": "m2",
+      "status": "reading",
+      "updatedAt": "2026-10-18T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-f4",
+      "memberId": "m5",
+      "status": "want",
+      "updatedAt": "2026-10-19T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-f5",
+      "memberId": "m6",
+      "status": "reading",
+      "updatedAt": "2026-10-20T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-f6",
+      "memberId": "m3",
+      "status": "finished",
+      "updatedAt": "2026-10-21T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-f6",
+      "memberId": "m5",
+      "status": "want",
+      "updatedAt": "2026-10-22T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-f7",
+      "memberId": "m8",
+      "status": "finished",
+      "updatedAt": "2026-10-23T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-f7",
+      "memberId": "m7",
+      "status": "want",
+      "updatedAt": "2026-10-24T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-f7",
+      "memberId": "m2",
+      "status": "finished",
+      "updatedAt": "2026-10-25T20:00:00-05:00"
+    }
+  ],
+  "gettogethers": [
+    {
+      "id": "gt-f1",
+      "hostId": "m6",
+      "title": "Coffee: PM interview practice",
+      "kind": "coffee",
+      "datetime": "2026-11-03T07:30:00-06:00",
+      "location": "Bluebird Cafe, Main St",
+      "note": "I'll bring two practice questions. Come poke holes in my answers.",
+      "visibility": "open",
+      "invitees": [],
+      "rsvps": [
+        {
+          "memberId": "m6",
+          "status": "yes"
+        },
+        {
+          "memberId": "m2",
+          "status": "yes"
+        },
+        {
+          "memberId": "m9",
+          "status": "maybe"
+        }
+      ]
+    },
+    {
+      "id": "gt-f2",
+      "hostId": "m10",
+      "title": "Food bank service day",
+      "kind": "visit",
+      "datetime": "2026-11-21T09:00:00-06:00",
+      "location": "Northside Food Bank, 1200 Industrial Dr",
+      "note": "Closed-toe shoes. Lunch at Mom and Dad's after.",
+      "visibility": "open",
+      "invitees": [],
+      "rsvps": [
+        {
+          "memberId": "m10",
+          "status": "yes"
+        },
+        {
+          "memberId": "m2",
+          "status": "yes"
+        },
+        {
+          "memberId": "m1",
+          "status": "yes"
+        },
+        {
+          "memberId": "m7",
+          "status": "yes"
+        },
+        {
+          "memberId": "m8",
+          "status": "maybe"
+        },
+        {
+          "memberId": "m4",
+          "status": "yes"
+        },
+        {
+          "memberId": "m5",
+          "status": "no"
+        }
+      ]
+    },
+    {
+      "id": "gt-f3",
+      "hostId": "m3",
+      "title": "Tasting: new truck menu",
+      "kind": "dinner",
+      "datetime": "2026-11-14T18:00:00-06:00",
+      "location": "Jake's apartment",
+      "note": "Six dishes, small portions. I need honest scores before I print the menu.",
+      "visibility": "closed",
+      "invitees": [
+        "m1",
+        "m4",
+        "m9"
+      ],
+      "rsvps": [
+        {
+          "memberId": "m3",
+          "status": "yes"
+        },
+        {
+          "memberId": "m4",
+          "status": "yes"
+        },
+        {
+          "memberId": "m9",
+          "status": "maybe"
+        }
+      ]
+    },
+    {
+      "id": "gt-f4",
+      "hostId": "m5",
+      "title": "Walk the Maple duplex",
+      "kind": "visit",
+      "datetime": "2026-10-18T10:00:00-05:00",
+      "location": "412 Maple Ave",
+      "note": "Looking at the roof and the kitchen with fresh eyes before I decide.",
+      "visibility": "open",
+      "invitees": [],
+      "rsvps": [
+        {
+          "memberId": "m5",
+          "status": "yes"
+        },
+        {
+          "memberId": "m1",
+          "status": "yes"
+        },
+        {
+          "memberId": "m3",
+          "status": "yes"
+        }
+      ]
+    }
+  ]
+}

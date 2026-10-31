@@ -1,0 +1,44 @@
+{
+  "id": "entrepreneur",
+  "name": "Flight Club",
+  "subtitle": "Under the Influence Ministries",
+  "tagline": "A Christian mastermind for missional entrepreneurs",
+  "verse": {
+    "short": "If I rise on the wings of the dawn…",
+    "full": "If I rise on the wings of the dawn, if I settle on the far side of the sea, even there your hand will guide me.",
+    "ref": "Psalm 139:9"
+  },
+  "nextLabel": "Next flight",
+  "enterLabel": "Board",
+  "colors": {
+    "primary": "#152238",
+    "accent": "#C9973A",
+    "background": "#F4EFE3",
+    "text": "#152238",
+    "surface": "#FFFDF7",
+    "muted": "#4A5566",
+    "rule": "#E2DCCB",
+    "good": "#1F6E43",
+    "goodBg": "#DCEFE2"
+  },
+  "logoText": "FC",
+  "logoMask": "brand/flight-club-logo-mask-720.png",
+  "meetingLengthMinutes": 120,
+  "location": {
+    "type": "inperson",
+    "label": "In person",
+    "url": null,
+    "address": "Location shared in announcements"
+  },
+  "credit": { "label": "Built by TPG", "url": "https://PLACEHOLDER-tpg-website" },
+  "inviteCode": "FOUNDERS2026",
+  "sheetId": "PLACEHOLDER",
+  "rules": [
+    "Confidential means confidential. Names, numbers and stories stay in the room.",
+    "Attend every session. Miss two in a row and Rachel will call you.",
+    "Check in by the start of the meeting. Hot seat prep is due 24 hours before.",
+    "Start at 7:00 sharp and end on time.",
+    "Give experience, not opinions. Say what you did, not what someone should do.",
+    "Leave with one commitment you can finish before the next session."
+  ]
+}

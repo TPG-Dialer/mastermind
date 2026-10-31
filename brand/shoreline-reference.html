@@ -1,0 +1,125 @@
+<title>Family Shortlist</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Atkinson+Hyperlegible:wght@400;700&family=Cormorant+Garamond:ital,wght@1,600&display=swap">
+<style>
+/* Layout: two large logo tiles (circle / open), then a 2x2 grid of name lockups, each as an invite-screen crop. */
+:root{--bg:#f3f2ee;--fg:#1d1d1b;--muted:#6b6a65;--rule:#dcdad3;--card:#fff;--palm:#1f4d3a;--sand:#f4efe2;--gold:#e0a458;--body:"Atkinson Hyperlegible",system-ui,sans-serif;--serif:"Fraunces",Georgia,serif}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#17181a;--fg:#ecebe6;--muted:#9c9b94;--rule:#2d2f33;--card:#202226;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#17181a;--fg:#ecebe6;--muted:#9c9b94;--rule:#2d2f33;--card:#202226;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);margin:0;padding-block:28px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1000px;margin:0 auto}
+h1{font-family:var(--serif);font-size:clamp(32px,5.5vw,48px);line-height:1.05;margin:0 0 8px;text-wrap:balance}
+.lede{color:var(--muted);margin:0 0 28px;max-width:66ch}
+h2{font-family:var(--serif);font-size:28px;margin:34px 0 4px;border-top:2px solid var(--fg);padding-top:14px}
+.sub{color:var(--muted);margin:0 0 18px;max-width:66ch}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
+.tilecard{background:var(--card);border:1px solid var(--rule);border-radius:12px;overflow:hidden}
+.tiles{display:grid;grid-template-columns:1fr 1fr}
+.tile{aspect-ratio:1;display:flex;align-items:center;justify-content:center;padding:12%}
+.tile.dark{background:var(--palm);--plate:var(--palm)}.tile.light{background:var(--sand);--plate:var(--sand)}
+.inv{--plate:var(--palm)}
+.tile svg{width:100%;height:100%}
+.tilecard .txt{padding:12px 14px 14px}
+.tilecard h4{margin:0 0 3px;font-family:var(--serif);font-size:17px}
+.tilecard p{margin:0;font-size:13px;color:var(--muted)}
+.lock{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px}
+.inv{background:var(--palm);color:var(--sand);border-radius:22px;padding:30px 20px 26px;text-align:center;position:relative;overflow:hidden;min-height:330px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.inv svg.bg{position:absolute;left:0;top:0;width:100%;height:auto;opacity:.22;pointer-events:none}
+.inv .mark{width:120px;height:120px;position:relative}
+.inv .mark svg{width:100%;height:100%}
+.inv .name{font-family:var(--serif);font-size:34px;line-height:1;margin-top:10px;position:relative}
+.inv .name.caps{letter-spacing:.06em;font-size:30px;text-transform:uppercase;font-weight:600}
+.inv .u{font-size:9px;letter-spacing:.22em;text-transform:uppercase;opacity:.75;margin-top:7px;position:relative}
+.inv .v{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:15px;margin-top:16px;opacity:.92;max-width:24ch;position:relative}
+.inv .mem{font-size:9px;letter-spacing:.1em;opacity:.65;margin-top:14px;text-transform:uppercase;position:relative}
+.cap{margin:10px 2px 0;font-size:13.5px;color:var(--muted)}
+.cap b{color:var(--fg);font-family:var(--serif);font-size:16px}
+.ask{margin-top:30px;border:2px dashed var(--rule);border-radius:12px;padding:16px 18px;color:var(--muted)}
+.ask b{color:var(--fg)}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+ <defs>
+  <!-- Palm with bigger M·S letters -->
+  <!-- Original mark A: palm on a ground line, M·S over the trunk, letters enlarged -->
+  <symbol id="palm" viewBox="0 0 100 100">
+   <g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M50 92 V40"/>
+    <path d="M50 40 C40 25 25 22 12 28 C25 28 36 34 50 40z"/>
+    <path d="M50 40 C60 25 75 22 88 28 C75 28 64 34 50 40z"/>
+    <path d="M50 40 C44 24 46 12 56 6 C52 16 52 28 50 40z"/>
+    <path d="M50 40 C56 24 54 12 44 6 C48 16 48 28 50 40z"/>
+    <path d="M50 40 C36 36 22 40 14 50 C26 44 40 44 50 40z"/>
+    <path d="M50 40 C64 36 78 40 86 50 C74 44 60 44 50 40z"/>
+    <path d="M30 92 H70"/>
+   </g>
+   <text x="50" y="80" text-anchor="middle" font-family="Fraunces,Georgia,serif" font-style="italic" font-weight="600" font-size="17" fill="currentColor" style="paint-order:stroke" stroke="var(--plate,transparent)" stroke-width="5">M<tspan fill="#e0a458" font-size="12" dy="-1"> · </tspan><tspan dy="1">S</tspan></text>
+  </symbol>
+  <symbol id="palm-circle" viewBox="0 0 100 100">
+   <circle cx="50" cy="50" r="47" fill="none" stroke="currentColor" stroke-width="1.8"/>
+   <circle cx="50" cy="50" r="42" fill="none" stroke="#e0a458" stroke-width=".9" stroke-dasharray="1.5 3"/>
+   <g transform="translate(15 13) scale(.7)"><use href="#palm"/></g>
+  </symbol>
+ </defs>
+</svg>
+
+<div class="wrap">
+<h1>Shortlist</h1>
+<p class="lede">The palm mark refined with bigger letters, in a circle and open. Then your four names, each on the first screen with the mark, the Psalm 92 line and the dedication.</p>
+
+<h2>The mark</h2>
+<p class="sub">The original drawing: palm on its ground line, M·S over the trunk, letters a bit bigger. Shown with the circle (thin gold dotted ring inside, a nod to Flight Club's stamp border) and open for comparison.</p>
+<div class="two">
+ <div class="tilecard"><div class="tiles">
+  <div class="tile dark" style="color:#f4efe2"><svg><use href="#palm-circle"/></svg></div>
+  <div class="tile light" style="color:#1f4d3a"><svg><use href="#palm-circle"/></svg></div>
+ </div><div class="txt"><h4>In a circle</h4><p>Your pick. Works as an app icon as-is and as a seal on the invite screen.</p></div></div>
+ <div class="tilecard"><div class="tiles">
+  <div class="tile dark" style="color:#f4efe2"><svg><use href="#palm"/></svg></div>
+  <div class="tile light" style="color:#1f4d3a"><svg><use href="#palm"/></svg></div>
+ </div><div class="txt"><h4>Open</h4><p>Lighter, sits well next to a wordmark in the app header. Needs a green square behind it for the icon.</p></div></div>
+</div>
+
+<h2>The four names</h2>
+<p class="sub">Shown with the circle mark on the first screen. The open mark would sit the same way.</p>
+<div class="lock">
+ <div>
+  <div class="inv"><svg class="bg" viewBox="0 0 300 200"><g fill="none" stroke="#f4efe2" stroke-width="1" stroke-linecap="round"><path d="M-10 20 Q80 10 150 60"/><path d="M20 0 Q90 30 140 70"/><path d="M310 30 Q230 20 170 70"/><path d="M290 0 Q220 40 175 80"/></g></svg>
+   <div class="mark" style="color:#f4efe2"><svg><use href="#palm-circle"/></svg></div>
+   <div class="name">Flourish</div><div class="u">Family Mastermind</div>
+   <div class="v">"The righteous will flourish like a palm tree."</div>
+   <div class="mem">In loving memory of Marie &amp; Shane</div>
+  </div>
+  <p class="cap"><b>1 · Flourish</b> · One word, a verb, modern. The button could say "Grow".</p>
+ </div>
+ <div>
+  <div class="inv"><svg class="bg" viewBox="0 0 300 200"><g fill="none" stroke="#f4efe2" stroke-width="1" stroke-linecap="round"><path d="M-10 20 Q80 10 150 60"/><path d="M20 0 Q90 30 140 70"/><path d="M310 30 Q230 20 170 70"/><path d="M290 0 Q220 40 175 80"/></g></svg>
+   <div class="mark" style="color:#f4efe2"><svg><use href="#palm-circle"/></svg></div>
+   <div class="name">Planted</div><div class="u">Family Mastermind</div>
+   <div class="v">"Planted in the house of the Lord, they will flourish."</div>
+   <div class="mem">In loving memory of Marie &amp; Shane</div>
+  </div>
+  <p class="cap"><b>2 · Planted</b> · Rooted, humble, matches the palm drawing exactly. Button: "Come in".</p>
+ </div>
+ <div>
+  <div class="inv"><svg class="bg" viewBox="0 0 300 200"><g fill="none" stroke="#f4efe2" stroke-width="1" stroke-linecap="round"><path d="M-10 20 Q80 10 150 60"/><path d="M20 0 Q90 30 140 70"/><path d="M310 30 Q230 20 170 70"/><path d="M290 0 Q220 40 175 80"/></g></svg>
+   <div class="mark" style="color:#f4efe2"><svg><use href="#palm-circle"/></svg></div>
+   <div class="name">The Courtyard</div><div class="u">Family Mastermind</div>
+   <div class="v">"They will flourish in the courts of our God."</div>
+   <div class="mem">In loving memory of Marie &amp; Shane</div>
+  </div>
+  <p class="cap"><b>5 · The Courtyard</b> · A sunny gathering place. Button: "Step in".</p>
+ </div>
+ <div>
+  <div class="inv"><svg class="bg" viewBox="0 0 300 200"><g fill="none" stroke="#f4efe2" stroke-width="1" stroke-linecap="round"><path d="M-10 20 Q80 10 150 60"/><path d="M20 0 Q90 30 140 70"/><path d="M310 30 Q230 20 170 70"/><path d="M290 0 Q220 40 175 80"/></g></svg>
+   <div class="mark" style="color:#f4efe2"><svg><use href="#palm-circle"/></svg></div>
+   <div class="name caps">Shoreline</div><div class="u">Family Mastermind</div>
+   <div class="v">"Even there your hand will guide me."</div>
+   <div class="mem">In loving memory of Marie &amp; Shane</div>
+  </div>
+  <p class="cap"><b>8 · Shoreline</b> · Pure tropical; set in caps here to show the option. Verse from Psalm 139, the same psalm as Flight Club. Button: "Come ashore".</p>
+ </div>
+</div>
+
+<div class="ask"><b>Pick the mark (circle or open) and the name.</b> Then I'll finalize the logo as real artwork (SVG plus app icons) and rebuild the family app in palm green with it, with the richer page design we talked about.</div>
+</div>

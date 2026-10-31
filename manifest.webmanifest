@@ -1,0 +1,25 @@
+{
+  "name": "The Shoreline",
+  "short_name": "Shoreline",
+  "description": "Meetings, commitments and hot seat for The Shoreline, a family mastermind.",
+  "start_url": "./index.html?group=family",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1F4D3A",
+  "theme_color": "#1F4D3A",
+  "icons": [
+    {
+      "src": "icons/family-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/family-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

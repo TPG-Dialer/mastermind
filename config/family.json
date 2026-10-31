@@ -1,0 +1,47 @@
+{
+  "id": "family",
+  "name": "The Shoreline",
+  "subtitle": "Family Mastermind",
+  "tagline": "A family mastermind, rooted and growing together",
+  "verse": {
+    "short": "Even there your hand will guide me.",
+    "full": "Even there your hand will guide me, your right hand will hold me fast.",
+    "ref": "Psalm 139:10"
+  },
+  "dedication": "In loving memory of Marie & Shane",
+  "nextLabel": "Next gathering",
+  "enterLabel": "Cast off",
+  "colors": {
+    "primary": "#1F4D3A",
+    "accent": "#E0A458",
+    "background": "#F4EFE2",
+    "text": "#1F4D3A",
+    "surface": "#FFFDF6",
+    "muted": "#4F6358",
+    "rule": "#E3DCC9",
+    "secondary": "#5B8C7A",
+    "good": "#2E8B57",
+    "goodBg": "#DDF0E4"
+  },
+  "logoText": "M·S",
+  "logoSvg": "brand/shoreline-logo.svg",
+  "meetingLengthMinutes": 60,
+  "location": {
+    "type": "zoom",
+    "label": "Zoom",
+    "url": "https://zoom.us/j/0000000000?pwd=PLACEHOLDER",
+    "address": null
+  },
+  "credit": { "label": "Built by TPG", "url": "https://PLACEHOLDER-tpg-website" },
+  "inviteCode": "FAMILY2026",
+  "sheetId": "PLACEHOLDER",
+  "rules": [
+    "What's said in the room stays in the room. Ask before sharing someone's story.",
+    "Show up. If you can't make it, tell Mark before the day of.",
+    "Check in before the meeting starts so we can read wins and challenges ahead of time.",
+    "Hot seat prep is in 24 hours before the meeting.",
+    "Phones face down during the meeting, except to take notes.",
+    "Advice is a gift. Say thank you, then decide for yourself.",
+    "Everyone leaves with one commitment, and we follow up on it."
+  ]
+}

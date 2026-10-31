@@ -1,0 +1,155 @@
+<title>Flight Club Direction A</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: three phone mocks of palette A, one per motif, in a row that stacks on phones. */
+:root{
+  --bg:#f3f2ee;--fg:#1d1d1b;--muted:#6b6a65;--rule:#dcdad3;--card:#fff;
+  --display:"Barlow Condensed",Impact,"Arial Narrow",sans-serif;
+  --serif:"Cormorant Garamond",Georgia,serif;
+  --body:"Atkinson Hyperlegible",system-ui,sans-serif;
+  /* Palette A */
+  --navy:#152238;--cream:#f4efe3;--paper:#fffdf7;--gold:#c9973a;--ink:#152238;--mutedA:#4a5566;--ruleA:#e2dccb;--good:#1f6e43;--goodbg:#dcefe2;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#17181a;--fg:#ecebe6;--muted:#9c9b94;--rule:#2d2f33;--card:#202226;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#17181a;--fg:#ecebe6;--muted:#9c9b94;--rule:#2d2f33;--card:#202226;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);margin:0;padding-block:28px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1080px;margin:0 auto}
+h1{font-family:var(--display);font-size:clamp(34px,6vw,52px);line-height:1;margin:0 0 6px;text-transform:uppercase;text-wrap:balance}
+.lede{color:var(--muted);margin:0 0 28px;max-width:64ch}
+.trio{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:26px}
+.col h3{font-family:var(--display);font-size:22px;text-transform:uppercase;margin:0 0 4px}
+.col p{margin:0 0 12px;color:var(--muted);font-size:14px;min-height:3.2em}
+.phone{aspect-ratio:9/18.5;max-width:340px;border-radius:34px;padding:10px;background:#0c0c0c;box-shadow:0 30px 50px -28px rgba(0,0,0,.6)}
+.screen{position:relative;height:100%;border-radius:26px;overflow:hidden;display:flex;flex-direction:column;background:var(--cream);color:var(--ink);font-size:11px;isolation:isolate}
+.art{position:absolute;inset:0;z-index:0;pointer-events:none}
+.art svg{position:absolute;left:0;width:100%;height:auto}
+.art .top{top:-4px}
+.art .bot{bottom:40px;transform:scaleY(-1)}
+.ui{position:relative;z-index:1;display:flex;flex-direction:column;height:100%}
+.brand{display:flex;align-items:center;gap:10px;margin:12px 12px 0;padding:8px 10px;background:var(--paper);border-radius:8px;box-shadow:0 1px 0 rgba(21,34,56,.08)}
+.logo{width:58px;height:42px;background:var(--navy);-webkit-mask:url(logo-mask.png) center/contain no-repeat;mask:url(logo-mask.png) center/contain no-repeat;flex-shrink:0}
+.brand .w{font-family:var(--display);font-size:21px;line-height:1;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.brand .u{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--mutedA);margin-top:3px}
+.verse{margin:8px 14px 6px;font-family:var(--serif);font-style:italic;font-weight:600;font-size:13.5px;color:var(--navy);text-shadow:0 0 6px var(--cream),0 0 2px var(--cream)}
+.hero{margin:6px 12px;padding:16px 14px 14px;border-radius:6px;background:var(--navy);color:var(--cream);position:relative}
+.hero .d{position:relative;z-index:1}
+.hero .t{position:relative;padding-top:12px}
+.hero .t::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:var(--gold)}
+.hero .m{font-size:9.5px;text-transform:uppercase;letter-spacing:.16em;opacity:.8}
+.hero .d{font-family:var(--display);font-size:40px;line-height:.95;margin-top:4px}
+.hero .t{margin-top:10px;font-weight:700;font-size:12px}
+.hero .s{opacity:.8;margin-top:2px}
+.hero .btns{display:flex;gap:6px;margin-top:12px}
+.hero .btns span{flex:1;text-align:center;padding:8px 0;border-radius:4px;font-weight:700;font-size:10px}
+.hero .btns .a{background:var(--gold);color:var(--navy)}
+.hero .btns .b{border:1.5px solid currentColor;opacity:.9}
+.sec{margin:14px 14px 6px;font-family:var(--display);font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--mutedA)}
+.task{margin:0 12px;padding:11px 12px;border-radius:6px;background:var(--paper);box-shadow:0 1px 0 rgba(0,0,0,.05);border-left:3px solid var(--gold)}
+.task b{display:block;font-size:12px}
+.task span{color:var(--mutedA)}
+.row{margin:8px 14px 0;padding:8px 0;border-top:1px solid var(--ruleA);display:flex;justify-content:space-between}
+.row span{color:var(--mutedA)}
+.pill{display:inline-block;padding:2px 7px;border-radius:99px;font-size:9px;font-weight:700;background:var(--goodbg);color:var(--good)}
+.tabs{margin-top:auto;display:flex;justify-content:space-around;padding:10px 0 12px;background:var(--paper);border-top:1px solid var(--ruleA);font-size:9px;color:var(--mutedA);position:relative;z-index:2}
+.tabs i{font-style:normal;color:var(--navy);font-weight:700}
+.login{margin-top:40px}
+.login h2{font-family:var(--display);font-size:28px;text-transform:uppercase;margin:0 0 6px;border-top:2px solid var(--fg);padding-top:14px}
+.login .note{color:var(--muted);margin:0 0 16px}
+.lscreen{max-width:340px;aspect-ratio:9/18.5;border-radius:26px;background:var(--navy);color:var(--cream);position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;box-sizing:border-box;box-shadow:0 30px 50px -28px rgba(0,0,0,.6)}
+.lscreen .biglogo{width:72%;aspect-ratio:1197/877;background:var(--cream);-webkit-mask:url(logo-mask.png) center/contain no-repeat;mask:url(logo-mask.png) center/contain no-repeat}
+.lscreen .w{font-family:var(--display);font-size:34px;letter-spacing:.08em;text-transform:uppercase;margin-top:10px}
+.lscreen .u{font-size:10px;letter-spacing:.2em;text-transform:uppercase;opacity:.75;margin-top:4px}
+.lscreen .v{font-family:var(--serif);font-style:italic;font-size:15px;margin-top:22px;opacity:.9;max-width:26ch}
+.lscreen .in{margin-top:26px;width:100%;padding:11px;border:1px solid rgba(244,239,227,.4);border-radius:4px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.8}
+.lscreen .go{margin-top:8px;width:100%;padding:11px;background:var(--gold);color:var(--navy);border-radius:4px;font-weight:700;font-size:12px;box-sizing:border-box}
+.lscreen svg{position:absolute;left:0;width:100%;height:auto;opacity:.5}
+.ask{margin-top:34px;border:2px dashed var(--rule);border-radius:12px;padding:16px 18px;color:var(--muted)}
+.ask b{color:var(--fg)}
+</style>
+<div class="wrap">
+<h1>Flight Club · Direction A</h1>
+<p class="lede">Navy, cream and soft gold, with your changes: a larger solid logo on its own plate so nothing shows through it, a bigger Flight Club wordmark with the UTIM line under it, and the Psalm in dark navy at a heavier weight. Same screen three times, one per motif.</p>
+
+<div class="trio">
+<div class="col">
+ <h3>1 · Stippled clouds</h3><p>Dot-halftone cloud bands, top and bottom. Echoes the dashed stamp border.</p>
+ <div class="phone"><div class="screen">
+  <div class="art">
+   <svg class="top" viewBox="0 0 330 130" aria-hidden="true"><defs><pattern id="d1" width="6" height="6" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="1.15" fill="#152238" opacity=".2"/></pattern><linearGradient id="f1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><mask id="m1"><rect width="330" height="130" fill="url(#f1)"/></mask></defs><g mask="url(#m1)"><path fill="url(#d1)" d="M-10 0h350v76c-30 12-60-8-90 6-28 14-52-10-86 0-36 10-62-14-96 2-32 16-58-4-78-2z"/><path fill="url(#d1)" d="M-10 0h350v48c-40 8-70-6-110 4-30 8-55-8-90 0-40 8-70-12-100 0-22 8-40-2-50-4z"/></g></svg>
+   <svg class="bot" viewBox="0 0 330 130" aria-hidden="true"><g mask="url(#m1)"><path fill="url(#d1)" d="M-10 0h350v76c-30 12-60-8-90 6-28 14-52-10-86 0-36 10-62-14-96 2-32 16-58-4-78-2z"/></g></svg>
+  </div>
+  <div class="ui">
+   <div class="brand"><span class="logo"></span><div><div class="w">Flight Club</div><div class="u">Under the Influence Ministries</div></div></div>
+   <div class="verse">"If I rise on the wings of the dawn…" Psalm 139:9</div>
+   <div class="hero"><div class="m">Next flight · Friday</div><div class="d">Nov 20</div><div class="t">November Flight Club</div><div class="s">7:00–9:00 AM · Central</div><div class="btns"><span class="a">Add to calendar</span><span class="b">Agenda</span></div></div>
+   <div class="sec">Before Nov 20</div>
+   <div class="task"><b>Check in for Nov 20</b><span>Your win and your biggest challenge</span></div>
+   <div class="row"><b>Your record</b><span>3 of 3 kept</span></div>
+   <div class="row"><b>Commitment</b><span class="pill">Kept</span></div>
+   <div class="row"><b>Hot seat</b><span>Marcus · prep is in</span></div>
+   <div class="tabs"><i>Home</i><span>Meetings</span><span>Track</span><span>Hot Seat</span><span>Group</span></div>
+  </div>
+ </div></div>
+</div>
+
+<div class="col">
+ <h3>2 · Wings of the dawn</h3><p>Thin gold contour lines and faint rays rising from the horizon. A quiet 7 AM sunrise.</p>
+ <div class="phone"><div class="screen">
+  <div class="art">
+   <svg class="top" viewBox="0 0 330 150" aria-hidden="true"><g stroke="#c9973a" stroke-width=".9" fill="none"><path d="M0 125 C70 95 130 95 200 125 S330 130 330 112" opacity=".55"/><path d="M0 108 C70 78 130 78 200 108 S330 113 330 95" opacity=".42"/><path d="M0 91 C70 61 130 61 200 91 S330 96 330 78" opacity=".3"/><path d="M0 74 C70 44 130 44 200 74 S330 79 330 61" opacity=".2"/><path d="M0 57 C70 27 130 27 200 57 S330 62 330 44" opacity=".12"/></g><g stroke="#152238" stroke-width=".6" opacity=".16"><line x1="165" y1="150" x2="30" y2="0"/><line x1="165" y1="150" x2="110" y2="0"/><line x1="165" y1="150" x2="220" y2="0"/><line x1="165" y1="150" x2="300" y2="0"/></g></svg>
+   <svg class="bot" viewBox="0 0 330 150" aria-hidden="true"><g stroke="#c9973a" stroke-width=".9" fill="none"><path d="M0 125 C70 95 130 95 200 125 S330 130 330 112" opacity=".45"/><path d="M0 108 C70 78 130 78 200 108 S330 113 330 95" opacity=".3"/><path d="M0 91 C70 61 130 61 200 91 S330 96 330 78" opacity=".18"/></g></svg>
+  </div>
+  <div class="ui">
+   <div class="brand"><span class="logo"></span><div><div class="w">Flight Club</div><div class="u">Under the Influence Ministries</div></div></div>
+   <div class="verse">"If I rise on the wings of the dawn…" Psalm 139:9</div>
+   <div class="hero"><div class="m">Next flight · Friday</div><div class="d">Nov 20</div><div class="t">November Flight Club</div><div class="s">7:00–9:00 AM · Central</div><div class="btns"><span class="a">Add to calendar</span><span class="b">Agenda</span></div></div>
+   <div class="sec">Before Nov 20</div>
+   <div class="task"><b>Check in for Nov 20</b><span>Your win and your biggest challenge</span></div>
+   <div class="row"><b>Your record</b><span>3 of 3 kept</span></div>
+   <div class="row"><b>Commitment</b><span class="pill">Kept</span></div>
+   <div class="row"><b>Hot seat</b><span>Marcus · prep is in</span></div>
+   <div class="tabs"><i>Home</i><span>Meetings</span><span>Track</span><span>Hot Seat</span><span>Group</span></div>
+  </div>
+ </div></div>
+</div>
+
+<div class="col">
+ <h3>3 · Flight path</h3><p>Dashed great-circle arcs with waypoint dots. A route map and a journey.</p>
+ <div class="phone"><div class="screen">
+  <div class="art">
+   <svg class="top" viewBox="0 0 330 150" aria-hidden="true"><g stroke="#152238" stroke-width=".8" fill="none" opacity=".28" stroke-dasharray="3 5"><path d="M-10 30 Q165 0 340 30"/><path d="M-10 62 Q165 32 340 62"/><path d="M-10 94 Q165 64 340 94"/><path d="M-10 126 Q165 96 340 126"/></g><g fill="#c9973a"><circle cx="240" cy="42" r="2.4"/><circle cx="70" cy="86" r="2"/><circle cx="150" cy="70" r="2"/></g><path d="M240 42 l12 -7" stroke="#c9973a" stroke-width="1"/></svg>
+   <svg class="bot" viewBox="0 0 330 150" aria-hidden="true"><g stroke="#152238" stroke-width=".8" fill="none" opacity=".22" stroke-dasharray="3 5"><path d="M-10 30 Q165 0 340 30"/><path d="M-10 62 Q165 32 340 62"/><path d="M-10 94 Q165 64 340 94"/></g><g fill="#c9973a" opacity=".8"><circle cx="100" cy="50" r="2"/><circle cx="260" cy="80" r="2"/></g></svg>
+  </div>
+  <div class="ui">
+   <div class="brand"><span class="logo"></span><div><div class="w">Flight Club</div><div class="u">Under the Influence Ministries</div></div></div>
+   <div class="verse">"If I rise on the wings of the dawn…" Psalm 139:9</div>
+   <div class="hero"><div class="m">Next flight · Friday</div><div class="d">Nov 20</div><div class="t">November Flight Club</div><div class="s">7:00–9:00 AM · Central</div><div class="btns"><span class="a">Add to calendar</span><span class="b">Agenda</span></div></div>
+   <div class="sec">Before Nov 20</div>
+   <div class="task"><b>Check in for Nov 20</b><span>Your win and your biggest challenge</span></div>
+   <div class="row"><b>Your record</b><span>3 of 3 kept</span></div>
+   <div class="row"><b>Commitment</b><span class="pill">Kept</span></div>
+   <div class="row"><b>Hot seat</b><span>Marcus · prep is in</span></div>
+   <div class="tabs"><i>Home</i><span>Meetings</span><span>Track</span><span>Hot Seat</span><span>Group</span></div>
+  </div>
+ </div></div>
+</div>
+</div>
+
+<div class="login">
+<h2>Bonus: the first screen</h2>
+<p class="note">What members see when they open the link for the first time. The logo gets the full stage here, in cream on navy. Shown with motif 1.</p>
+<div class="lscreen">
+ <svg style="top:0" viewBox="0 0 330 130" aria-hidden="true"><defs><pattern id="dl" width="6" height="6" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="1.15" fill="#f4efe3" opacity=".35"/></pattern><linearGradient id="fl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><mask id="ml"><rect width="330" height="130" fill="url(#fl)"/></mask></defs><g mask="url(#ml)"><path fill="url(#dl)" d="M-10 0h350v76c-30 12-60-8-90 6-28 14-52-10-86 0-36 10-62-14-96 2-32 16-58-4-78-2z"/></g></svg>
+ <svg style="bottom:0;transform:scaleY(-1)" viewBox="0 0 330 130" aria-hidden="true"><g mask="url(#ml)"><path fill="url(#dl)" d="M-10 0h350v76c-30 12-60-8-90 6-28 14-52-10-86 0-36 10-62-14-96 2-32 16-58-4-78-2z"/></g></svg>
+ <div class="biglogo"></div>
+ <div class="w">Flight Club</div>
+ <div class="u">Under the Influence Ministries</div>
+ <div class="v">"If I rise on the wings of the dawn, if I settle on the far side of the sea, even there your hand will guide me."</div>
+ <div class="in">Invite code</div>
+ <div class="go">Board</div>
+</div>
+</div>
+
+<div class="ask"><b>Pick 1, 2 or 3</b> (or tell me what to tweak) and I'll apply it to the full Flight Club app. Also tell me if Psalm 139:9 is the right verse or if the group has one of its own.</div>
+</div>

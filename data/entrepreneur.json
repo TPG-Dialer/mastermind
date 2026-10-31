@@ -1,0 +1,1620 @@
+{
+  "members": [
+    {
+      "id": "e1",
+      "name": "Rachel Kim",
+      "role": "admin",
+      "bio": "CEO of Ledgerly, scheduling software for physical therapy clinics. 14 people.",
+      "focus": "Closing Hendricks and hiring a head of sales.",
+      "canHelpWith": [
+        "Enterprise sales",
+        "SaaS pricing",
+        "Fundraising decks"
+      ],
+      "workingGenius": {
+        "geniuses": [
+          "I",
+          "G"
+        ],
+        "competencies": [
+          "D",
+          "W"
+        ],
+        "frustrations": [
+          "E",
+          "T"
+        ]
+      }
+    },
+    {
+      "id": "e2",
+      "name": "Marcus Bell",
+      "role": "member",
+      "bio": "Owner of Bell Home Services, HVAC and plumbing in north Austin. 22 techs.",
+      "focus": "Hiring an ops manager so he can get out of dispatch.",
+      "canHelpWith": [
+        "Hiring field staff",
+        "Fleet and vehicles",
+        "Running a service business"
+      ],
+      "workingGenius": {
+        "geniuses": [
+          "E",
+          "T"
+        ],
+        "competencies": [
+          "G",
+          "D"
+        ],
+        "frustrations": [
+          "W",
+          "I"
+        ]
+      }
+    },
+    {
+      "id": "e3",
+      "name": "Priya Natarajan",
+      "role": "member",
+      "bio": "Founder of Stackwise, inventory software for craft breweries.",
+      "focus": "Signing the first two channel partners.",
+      "canHelpWith": [
+        "Partnership terms",
+        "Product roadmaps",
+        "Churn analysis"
+      ],
+      "workingGenius": {
+        "geniuses": [
+          "W",
+          "D"
+        ],
+        "competencies": [
+          "I",
+          "T"
+        ],
+        "frustrations": [
+          "G",
+          "E"
+        ]
+      }
+    },
+    {
+      "id": "e4",
+      "name": "Luis Ortega",
+      "role": "member",
+      "bio": "Owns Ortega Auto, a two-bay independent repair shop with a waiting list.",
+      "focus": "Deciding on a second location before spring.",
+      "canHelpWith": [
+        "SBA loans",
+        "Shop operations",
+        "Buying used equipment"
+      ],
+      "workingGenius": {
+        "geniuses": [
+          "D",
+          "T"
+        ],
+        "competencies": [
+          "E",
+          "G"
+        ],
+        "frustrations": [
+          "W",
+          "I"
+        ]
+      }
+    },
+    {
+      "id": "e5",
+      "name": "Dana Whitfield",
+      "role": "member",
+      "bio": "Runs Whitfield Creative, a six-person branding agency on retainers.",
+      "focus": "Raising retainers 15% without losing the two big clients.",
+      "canHelpWith": [
+        "Brand and messaging",
+        "Client proposals",
+        "Agency pricing"
+      ],
+      "workingGenius": {
+        "geniuses": [
+          "D",
+          "E"
+        ],
+        "competencies": [
+          "W",
+          "T"
+        ],
+        "frustrations": [
+          "I",
+          "G"
+        ]
+      }
+    },
+    {
+      "id": "e6",
+      "name": "Chris Albrecht",
+      "role": "member",
+      "bio": "COO of a 40-person digital marketing agency.",
+      "focus": "Getting net margin from 12% to 20%.",
+      "canHelpWith": [
+        "Cutting software costs",
+        "Financial dashboards",
+        "Process docs"
+      ],
+      "workingGenius": null
+    },
+    {
+      "id": "e7",
+      "name": "Tasha Monroe",
+      "role": "member",
+      "bio": "Leadership coach for first-time managers. Solo, moving to group programs.",
+      "focus": "Publishing ten client case studies.",
+      "canHelpWith": [
+        "Hard conversations",
+        "Facilitating a team offsite",
+        "Video on a budget"
+      ],
+      "workingGenius": {
+        "geniuses": [
+          "G",
+          "W"
+        ],
+        "competencies": [
+          "I",
+          "E"
+        ],
+        "frustrations": [
+          "D",
+          "T"
+        ]
+      }
+    },
+    {
+      "id": "e8",
+      "name": "Owen Park",
+      "role": "member",
+      "bio": "Owner of Park Precision, a contract machining plant. 31 employees.",
+      "focus": "Two CEO days a month away from the floor.",
+      "canHelpWith": [
+        "Manufacturing and quoting",
+        "Hiring skilled trades",
+        "Equipment financing"
+      ],
+      "workingGenius": null
+    }
+  ],
+  "meetings": [
+    {
+      "id": "e-2026-08",
+      "datetime": "2026-08-21T07:00:00-05:00",
+      "title": "August Flight Club",
+      "agenda": [
+        {
+          "time": 10,
+          "item": "Opening prayer and devotional",
+          "owner": "e1"
+        },
+        {
+          "time": 10,
+          "item": "Quick wins, one sentence each",
+          "owner": "all"
+        },
+        {
+          "time": 25,
+          "item": "Commitment check-in",
+          "owner": "all"
+        },
+        {
+          "time": 45,
+          "item": "Hot seat: Marcus on hiring a first ops manager",
+          "owner": "e2"
+        },
+        {
+          "time": 20,
+          "item": "Teaching: stewardship and the business owner",
+          "owner": "all"
+        },
+        {
+          "time": 10,
+          "item": "New commitments and closing prayer",
+          "owner": "all"
+        }
+      ],
+      "hotSeatMemberId": "e2",
+      "hotSeatPrep": {
+        "problem": "Revenue is $1.2M and I'm still doing dispatch myself. Do I hire an ops manager at $70k or promote my lead tech?",
+        "context": "11 techs, 3 vans on call. I spend about 25 hours a week on dispatch and scheduling.",
+        "whatTried": "Wrote a job description. Talked to my lead tech, who's interested but nervous.",
+        "winLooksLike": "A hire decision and a 90-day plan for handing off dispatch.",
+        "submittedAt": "2026-08-19T21:00:00-05:00"
+      },
+      "actionPlan": null,
+      "attendance": [
+        "e1",
+        "e2",
+        "e3",
+        "e4",
+        "e5",
+        "e6",
+        "e7",
+        "e8"
+      ],
+      "rsvps": []
+    },
+    {
+      "id": "e-2026-09",
+      "datetime": "2026-09-18T07:00:00-05:00",
+      "title": "September Flight Club",
+      "agenda": [
+        {
+          "time": 10,
+          "item": "Opening prayer and devotional",
+          "owner": "e1"
+        },
+        {
+          "time": 10,
+          "item": "Quick wins, one sentence each",
+          "owner": "all"
+        },
+        {
+          "time": 25,
+          "item": "Commitment check-in",
+          "owner": "all"
+        },
+        {
+          "time": 45,
+          "item": "Hot seat: Priya on a channel partner offer",
+          "owner": "e3"
+        },
+        {
+          "time": 20,
+          "item": "Book discussion: Business for the Glory of God",
+          "owner": "all"
+        },
+        {
+          "time": 10,
+          "item": "New commitments and closing prayer",
+          "owner": "all"
+        }
+      ],
+      "hotSeatMemberId": "e3",
+      "hotSeatPrep": {
+        "problem": "A reseller wants exclusive rights in Texas for 40% margin. Is exclusivity worth it for a guaranteed 200 seats?",
+        "context": "200 seats is about $96k ARR. We have 3 Texas customers today, all inbound.",
+        "whatTried": "Had two calls with them and asked for references.",
+        "winLooksLike": "Terms I'd sign tomorrow, and the walk-away point.",
+        "submittedAt": "2026-09-16T18:30:00-05:00"
+      },
+      "actionPlan": {
+        "adviceTaken": [
+          "Don't give exclusivity without a seat minimum",
+          "Counter at 30% and a 12-month term",
+          "Ask for a 90-day out clause"
+        ],
+        "nextStep": "Send the reseller a counter: non-exclusive, 30% margin, 12-month term.",
+        "deadline": "2026-09-30",
+        "goalId": "g-e3-1",
+        "savedAt": "2026-09-18T08:45:00-05:00"
+      },
+      "attendance": [
+        "e1",
+        "e2",
+        "e3",
+        "e4",
+        "e5",
+        "e7",
+        "e8"
+      ],
+      "rsvps": []
+    },
+    {
+      "id": "e-2026-10",
+      "datetime": "2026-10-16T07:00:00-05:00",
+      "title": "October Flight Club",
+      "agenda": [
+        {
+          "time": 10,
+          "item": "Opening prayer and devotional",
+          "owner": "e1"
+        },
+        {
+          "time": 10,
+          "item": "Quick wins, one sentence each",
+          "owner": "all"
+        },
+        {
+          "time": 25,
+          "item": "Commitment check-in",
+          "owner": "all"
+        },
+        {
+          "time": 45,
+          "item": "Hot seat: Luis on a second location",
+          "owner": "e4"
+        },
+        {
+          "time": 20,
+          "item": "Teaching: work as worship",
+          "owner": "all"
+        },
+        {
+          "time": 10,
+          "item": "New commitments and closing prayer",
+          "owner": "all"
+        }
+      ],
+      "hotSeatMemberId": "e4",
+      "hotSeatPrep": {
+        "problem": "Location one is at 85% capacity. Do I open a second shop with an SBA loan or add a Saturday shift first?",
+        "context": "Auto repair, 6 bays. Wait time for appointments is up to 9 days. SBA quote is $420k at 10.5%.",
+        "whatTried": "Toured two buildings. Asked my techs who'd work Saturdays (4 of 7 said yes).",
+        "winLooksLike": "Know whether demand is real before signing a 10-year lease.",
+        "submittedAt": "2026-10-14T20:10:00-05:00"
+      },
+      "actionPlan": {
+        "adviceTaken": [
+          "Run Saturdays for four weeks before any lease",
+          "Track margin per shift, not just revenue",
+          "Talk to the SBA lender anyway so you know the terms",
+          "Raise the labor rate $10 first"
+        ],
+        "nextStep": "Run Saturday shifts for four weeks and compare margin to weekdays.",
+        "deadline": "2026-11-13",
+        "goalId": "g-e4-1",
+        "savedAt": "2026-10-16T09:45:00-05:00"
+      },
+      "attendance": [
+        "e1",
+        "e2",
+        "e3",
+        "e4",
+        "e5",
+        "e6",
+        "e8"
+      ],
+      "rsvps": []
+    },
+    {
+      "id": "e-2026-11",
+      "datetime": "2026-11-20T07:00:00-06:00",
+      "title": "November Flight Club",
+      "agenda": [
+        {
+          "time": 10,
+          "item": "Opening prayer and devotional",
+          "owner": "e1"
+        },
+        {
+          "time": 10,
+          "item": "Quick wins, one sentence each",
+          "owner": "all"
+        },
+        {
+          "time": 25,
+          "item": "Commitment check-in",
+          "owner": "all"
+        },
+        {
+          "time": 45,
+          "item": "Hot seat: Dana on raising prices",
+          "owner": "e5"
+        },
+        {
+          "time": 20,
+          "item": "Teaching: generosity in pricing and pay",
+          "owner": "all"
+        },
+        {
+          "time": 10,
+          "item": "New commitments and closing prayer",
+          "owner": "all"
+        }
+      ],
+      "hotSeatMemberId": "e5",
+      "hotSeatPrep": {
+        "problem": "My agency retainers haven't gone up in 3 years. How do I raise them 15% without losing my two biggest clients?",
+        "context": "Those two clients are 48% of revenue and both run 40% over scope. Costs are up about 20% since 2023.",
+        "whatTried": "Pulled 12 months of hours vs retainer. Drafted an email but haven't sent it.",
+        "winLooksLike": "A pricing plan and the exact words for the conversation with each client.",
+        "submittedAt": "2026-10-30T16:40:00-05:00"
+      },
+      "actionPlan": null,
+      "attendance": [],
+      "rsvps": [
+        {
+          "memberId": "e2",
+          "status": "yes"
+        },
+        {
+          "memberId": "e3",
+          "status": "yes"
+        },
+        {
+          "memberId": "e4",
+          "status": "yes"
+        },
+        {
+          "memberId": "e5",
+          "status": "yes"
+        },
+        {
+          "memberId": "e6",
+          "status": "maybe"
+        },
+        {
+          "memberId": "e8",
+          "status": "no"
+        }
+      ]
+    },
+    {
+      "id": "e-2026-12",
+      "datetime": "2026-12-18T07:00:00-06:00",
+      "title": "December Flight Club",
+      "agenda": [
+        {
+          "time": 10,
+          "item": "Opening prayer and devotional",
+          "owner": "e1"
+        },
+        {
+          "time": 10,
+          "item": "Quick wins, one sentence each",
+          "owner": "all"
+        },
+        {
+          "time": 25,
+          "item": "Commitment check-in",
+          "owner": "all"
+        },
+        {
+          "time": 45,
+          "item": "Hot seat: Chris",
+          "owner": "e6"
+        },
+        {
+          "time": 20,
+          "item": "2027 one-page plans: swap with a partner",
+          "owner": "all"
+        },
+        {
+          "time": 10,
+          "item": "New commitments and closing prayer",
+          "owner": "all"
+        }
+      ],
+      "hotSeatMemberId": "e6",
+      "hotSeatPrep": null,
+      "actionPlan": null,
+      "attendance": [],
+      "rsvps": []
+    },
+    {
+      "id": "e-2027-01",
+      "datetime": "2027-01-15T07:00:00-06:00",
+      "title": "January Flight Club",
+      "agenda": [
+        {
+          "time": 10,
+          "item": "Opening prayer and devotional",
+          "owner": "e1"
+        },
+        {
+          "time": 10,
+          "item": "Quick wins, one sentence each",
+          "owner": "all"
+        },
+        {
+          "time": 25,
+          "item": "Commitment check-in",
+          "owner": "all"
+        },
+        {
+          "time": 45,
+          "item": "Hot seat: Tasha",
+          "owner": "e7"
+        },
+        {
+          "time": 20,
+          "item": "Teaching: setting the year before the Lord",
+          "owner": "all"
+        },
+        {
+          "time": 10,
+          "item": "New commitments and closing prayer",
+          "owner": "all"
+        }
+      ],
+      "hotSeatMemberId": "e7",
+      "hotSeatPrep": null,
+      "actionPlan": null,
+      "attendance": [],
+      "rsvps": []
+    }
+  ],
+  "commitments": [
+    {
+      "id": "c-e8-e1",
+      "memberId": "e1",
+      "meetingId": "e-2026-08",
+      "text": "Get the Hendricks proposal in front of their CFO.",
+      "status": "done",
+      "updatedAt": "2026-09-09T15:00:00-05:00",
+      "lastUpdateNote": "",
+      "goalId": "g-e1-1"
+    },
+    {
+      "id": "c-e8-e2",
+      "memberId": "e2",
+      "meetingId": "e-2026-08",
+      "text": "Write the ops manager job description and a 90-day plan.",
+      "status": "done",
+      "updatedAt": "2026-09-04T19:00:00-05:00",
+      "lastUpdateNote": "",
+      "goalId": "g-e2-1"
+    },
+    {
+      "id": "c-e8-e3",
+      "memberId": "e3",
+      "meetingId": "e-2026-08",
+      "text": "Ask the reseller for three references.",
+      "status": "done",
+      "updatedAt": "2026-08-29T11:00:00-05:00",
+      "lastUpdateNote": "Two called back, both positive.",
+      "goalId": "g-e3-1"
+    },
+    {
+      "id": "c-e8-e4",
+      "memberId": "e4",
+      "meetingId": "e-2026-08",
+      "text": "Track appointment wait times for a month.",
+      "status": "done",
+      "updatedAt": "2026-09-16T17:00:00-05:00",
+      "lastUpdateNote": "Average 7 days.",
+      "goalId": "g-e4-1"
+    },
+    {
+      "id": "c-e8-e5",
+      "memberId": "e5",
+      "meetingId": "e-2026-08",
+      "text": "Send the scope-change email to the Keller account.",
+      "status": "not_started",
+      "updatedAt": "2026-08-21T08:00:00-05:00",
+      "lastUpdateNote": "",
+      "goalId": "g-e5-1"
+    },
+    {
+      "id": "c-e8-e6",
+      "memberId": "e6",
+      "meetingId": "e-2026-08",
+      "text": "List every software subscription and its owner.",
+      "status": "done",
+      "updatedAt": "2026-09-12T16:00:00-05:00",
+      "lastUpdateNote": "42 tools. Wow.",
+      "goalId": "g-e6-1"
+    },
+    {
+      "id": "c-e8-e7",
+      "memberId": "e7",
+      "meetingId": "e-2026-08",
+      "text": "Ask five past clients for a case-study interview.",
+      "status": "done",
+      "updatedAt": "2026-09-03T10:00:00-05:00",
+      "lastUpdateNote": "Four said yes.",
+      "goalId": "g-e7-1"
+    },
+    {
+      "id": "c-e8-e8",
+      "memberId": "e8",
+      "meetingId": "e-2026-08",
+      "text": "Block one CEO day in August.",
+      "status": "in_progress",
+      "updatedAt": "2026-09-14T18:00:00-05:00",
+      "lastUpdateNote": "Got pulled into a line breakdown.",
+      "goalId": "g-e8-1"
+    },
+    {
+      "id": "c-e9-e1",
+      "memberId": "e1",
+      "meetingId": "e-2026-09",
+      "text": "Get a verbal yes or no from Hendricks.",
+      "status": "done",
+      "updatedAt": "2026-10-13T14:00:00-05:00",
+      "lastUpdateNote": "Verbal yes, legal review next.",
+      "goalId": "g-e1-1"
+    },
+    {
+      "id": "c-e9-e2",
+      "memberId": "e2",
+      "meetingId": "e-2026-09",
+      "text": "Post the ops manager role.",
+      "status": "done",
+      "updatedAt": "2026-09-25T09:00:00-05:00",
+      "lastUpdateNote": "",
+      "goalId": "g-e2-1"
+    },
+    {
+      "id": "c-e9-e3",
+      "memberId": "e3",
+      "meetingId": "e-2026-09",
+      "text": "Send the reseller a counter offer.",
+      "status": "done",
+      "updatedAt": "2026-09-23T14:20:00-05:00",
+      "lastUpdateNote": "",
+      "goalId": "g-e3-1"
+    },
+    {
+      "id": "c-e9-e4",
+      "memberId": "e4",
+      "meetingId": "e-2026-09",
+      "text": "Get an SBA pre-qualification.",
+      "status": "done",
+      "updatedAt": "2026-10-09T12:00:00-05:00",
+      "lastUpdateNote": "$420k at 10.5%.",
+      "goalId": "g-e4-1"
+    },
+    {
+      "id": "c-e9-e5",
+      "memberId": "e5",
+      "meetingId": "e-2026-09",
+      "text": "Pull 12 months of hours by client.",
+      "status": "in_progress",
+      "updatedAt": "2026-10-15T20:00:00-05:00",
+      "lastUpdateNote": "Halfway.",
+      "goalId": "g-e5-1"
+    },
+    {
+      "id": "c-e9-e6",
+      "memberId": "e6",
+      "meetingId": "e-2026-09",
+      "text": "Cancel five tools nobody uses.",
+      "status": "done",
+      "updatedAt": "2026-10-06T10:00:00-05:00",
+      "lastUpdateNote": "Saved $640/month.",
+      "goalId": "g-e6-1"
+    },
+    {
+      "id": "c-e9-e7",
+      "memberId": "e7",
+      "meetingId": "e-2026-09",
+      "text": "Film the first two case studies.",
+      "status": "done",
+      "updatedAt": "2026-10-12T15:00:00-05:00",
+      "lastUpdateNote": "",
+      "goalId": "g-e7-1"
+    },
+    {
+      "id": "c-e9-e8",
+      "memberId": "e8",
+      "meetingId": "e-2026-09",
+      "text": "Block two CEO days in September.",
+      "status": "done",
+      "updatedAt": "2026-10-10T18:00:00-05:00",
+      "lastUpdateNote": "Both happened.",
+      "goalId": "g-e8-1"
+    },
+    {
+      "id": "c-e10-e1",
+      "memberId": "e1",
+      "meetingId": "e-2026-10",
+      "text": "Close the Hendricks enterprise deal or walk away by Nov 13.",
+      "status": "done",
+      "updatedAt": "2026-10-27T16:45:00-05:00",
+      "lastUpdateNote": "Signed. $84k ARR.",
+      "goalId": "g-e1-1"
+    },
+    {
+      "id": "c-e10-e2",
+      "memberId": "e2",
+      "meetingId": "e-2026-10",
+      "text": "Post the ops manager role and do five first-round interviews.",
+      "status": "in_progress",
+      "updatedAt": "2026-10-29T11:00:00-05:00",
+      "lastUpdateNote": "Posted. 3 of 5 interviews done.",
+      "goalId": "g-e2-1"
+    },
+    {
+      "id": "c-e10-e3",
+      "memberId": "e3",
+      "meetingId": "e-2026-10",
+      "text": "Send the reseller a counter: non-exclusive, 30% margin, 12-month term.",
+      "status": "done",
+      "updatedAt": "2026-10-19T14:20:00-05:00",
+      "lastUpdateNote": "They accepted 32%. Contract out for signature.",
+      "goalId": "g-e3-1"
+    },
+    {
+      "id": "c-e10-e4",
+      "memberId": "e4",
+      "meetingId": "e-2026-10",
+      "text": "Run Saturday shifts for four weeks and compare margin to weekdays.",
+      "status": "in_progress",
+      "updatedAt": "2026-10-28T18:30:00-05:00",
+      "lastUpdateNote": "3 Saturdays in. Margin is 6 points higher than weekdays.",
+      "goalId": "g-e4-1"
+    },
+    {
+      "id": "c-e10-e5",
+      "memberId": "e5",
+      "meetingId": "e-2026-10",
+      "text": "Pull 12 months of hours vs. retainer for each client.",
+      "status": "done",
+      "updatedAt": "2026-10-25T09:10:00-05:00",
+      "lastUpdateNote": "Two clients are 40% over scope. Bringing it to hot seat.",
+      "goalId": "g-e5-1"
+    },
+    {
+      "id": "c-e10-e6",
+      "memberId": "e6",
+      "meetingId": "e-2026-10",
+      "text": "Cut the SaaS tool budget by $1,500/month.",
+      "status": "not_started",
+      "updatedAt": "2026-10-16T08:00:00-05:00",
+      "lastUpdateNote": "",
+      "goalId": "g-e6-1"
+    },
+    {
+      "id": "c-e10-e7",
+      "memberId": "e7",
+      "meetingId": "e-2026-10",
+      "text": "Record and publish four short client case-study videos.",
+      "status": "in_progress",
+      "updatedAt": "2026-10-24T13:00:00-05:00",
+      "lastUpdateNote": "Two filmed, editing this week.",
+      "goalId": "g-e7-1"
+    },
+    {
+      "id": "c-e10-e8",
+      "memberId": "e8",
+      "meetingId": "e-2026-10",
+      "text": "Block two CEO days on the calendar with no calls.",
+      "status": "done",
+      "updatedAt": "2026-10-23T19:00:00-05:00",
+      "lastUpdateNote": "Did Oct 18 and Oct 22. Wrote the 2027 hiring plan.",
+      "goalId": "g-e8-1"
+    }
+  ],
+  "goals": [
+    {
+      "id": "g-e1-1",
+      "memberId": "e1",
+      "period": "Q4 2026",
+      "title": "Hit $1.5M ARR by year end",
+      "why": "It's the number that gets us to break-even.",
+      "targetDate": "2026-12-31",
+      "status": "active",
+      "accountabilityAsk": "Ask me for the ARR number every month, no rounding up."
+    },
+    {
+      "id": "g-e1-2",
+      "memberId": "e1",
+      "period": "2027",
+      "title": "Hire a head of sales",
+      "why": "I can't be the only closer in 2027.",
+      "targetDate": "2027-03-31",
+      "status": "active",
+      "accountabilityAsk": ""
+    },
+    {
+      "id": "g-e2-1",
+      "memberId": "e2",
+      "period": "Q4 2026",
+      "title": "Get out of dispatch",
+      "why": "I should be selling, not scheduling.",
+      "targetDate": "2026-12-31",
+      "status": "active",
+      "accountabilityAsk": "Ask me how many hours I spent on dispatch last week."
+    },
+    {
+      "id": "g-e2-2",
+      "memberId": "e2",
+      "period": "2027",
+      "title": "Open a second service area in Round Rock",
+      "why": "Half our calls come from there already.",
+      "targetDate": "2027-06-30",
+      "status": "active",
+      "accountabilityAsk": ""
+    },
+    {
+      "id": "g-e3-1",
+      "memberId": "e3",
+      "period": "Q4 2026",
+      "title": "Sign two channel partners",
+      "why": "Partners scale faster than my one sales rep.",
+      "targetDate": "2026-12-31",
+      "status": "active",
+      "accountabilityAsk": "Hold me to two signed contracts, not two good calls."
+    },
+    {
+      "id": "g-e3-2",
+      "memberId": "e3",
+      "period": "2027",
+      "title": "Cut churn under 2% monthly",
+      "why": "Growth means nothing if they leave.",
+      "targetDate": "2027-03-31",
+      "status": "active",
+      "accountabilityAsk": ""
+    },
+    {
+      "id": "g-e4-1",
+      "memberId": "e4",
+      "period": "Q4 2026",
+      "title": "Decide on a second location",
+      "why": "Waiting lists are lost customers.",
+      "targetDate": "2026-12-31",
+      "status": "active",
+      "accountabilityAsk": "Ask me for the Saturday margin numbers."
+    },
+    {
+      "id": "g-e4-2",
+      "memberId": "e4",
+      "period": "Q4 2026",
+      "title": "Raise the labor rate to $145/hour",
+      "why": "We're $20 under the dealer.",
+      "targetDate": "2026-11-30",
+      "status": "active",
+      "accountabilityAsk": ""
+    },
+    {
+      "id": "g-e5-1",
+      "memberId": "e5",
+      "period": "Q4 2026",
+      "title": "Raise retainers 15% across the board",
+      "why": "Costs went up and I didn't.",
+      "targetDate": "2027-01-31",
+      "status": "active",
+      "accountabilityAsk": "Ask me if I've had the conversation with both big clients."
+    },
+    {
+      "id": "g-e5-2",
+      "memberId": "e5",
+      "period": "2027",
+      "title": "No client over 25% of revenue",
+      "why": "Two clients is too much risk.",
+      "targetDate": "2027-12-31",
+      "status": "active",
+      "accountabilityAsk": ""
+    },
+    {
+      "id": "g-e6-1",
+      "memberId": "e6",
+      "period": "Q4 2026",
+      "title": "Get to 20% net margin",
+      "why": "We grew revenue but not profit.",
+      "targetDate": "2026-12-31",
+      "status": "active",
+      "accountabilityAsk": "Ask me what I cut this month."
+    },
+    {
+      "id": "g-e6-2",
+      "memberId": "e6",
+      "period": "Q4 2026",
+      "title": "Write a one-page 2027 plan",
+      "why": "So the team knows what matters.",
+      "targetDate": "2026-12-03",
+      "status": "active",
+      "accountabilityAsk": ""
+    },
+    {
+      "id": "g-e7-1",
+      "memberId": "e7",
+      "period": "Q4 2026",
+      "title": "Build a library of 10 client case studies",
+      "why": "Referrals ask for proof.",
+      "targetDate": "2026-12-31",
+      "status": "active",
+      "accountabilityAsk": "Ask me how many are published, not filmed."
+    },
+    {
+      "id": "g-e7-2",
+      "memberId": "e7",
+      "period": "2027",
+      "title": "Launch a group coaching offer",
+      "why": "One-to-one doesn't scale.",
+      "targetDate": "2027-04-30",
+      "status": "paused",
+      "accountabilityAsk": ""
+    },
+    {
+      "id": "g-e8-1",
+      "memberId": "e8",
+      "period": "Q4 2026",
+      "title": "Work on the business two days a month",
+      "why": "I'm stuck in the plant every day.",
+      "targetDate": "2026-12-31",
+      "status": "active",
+      "accountabilityAsk": "Ask me if the CEO days actually happened."
+    },
+    {
+      "id": "g-e8-2",
+      "memberId": "e8",
+      "period": "Q4 2026",
+      "title": "Finish the 2027 hiring plan",
+      "why": "We need 6 people and no plan.",
+      "targetDate": "2026-11-15",
+      "status": "done",
+      "accountabilityAsk": ""
+    }
+  ],
+  "checkins": [
+    {
+      "id": "k-e-2026-10-e1",
+      "meetingId": "e-2026-10",
+      "memberId": "e1",
+      "win": "Hendricks gave a verbal yes.",
+      "challenge": "Legal review is dragging.",
+      "submittedAt": "2026-10-15T19:00:00-05:00"
+    },
+    {
+      "id": "k-e-2026-10-e2",
+      "meetingId": "e-2026-10",
+      "memberId": "e2",
+      "win": "Ops manager role is live, 40 applicants.",
+      "challenge": "Screening is eating my evenings.",
+      "submittedAt": "2026-10-15T21:30:00-05:00"
+    },
+    {
+      "id": "k-e-2026-10-e3",
+      "meetingId": "e-2026-10",
+      "memberId": "e3",
+      "win": "Reseller counter is out.",
+      "challenge": "Not sure they'll take 30%.",
+      "submittedAt": "2026-10-14T17:00:00-05:00"
+    },
+    {
+      "id": "k-e-2026-10-e4",
+      "meetingId": "e-2026-10",
+      "memberId": "e4",
+      "win": "SBA pre-qualified.",
+      "challenge": "Not sure the demand holds up.",
+      "submittedAt": "2026-10-15T22:00:00-05:00"
+    },
+    {
+      "id": "k-e-2026-10-e5",
+      "meetingId": "e-2026-10",
+      "memberId": "e5",
+      "win": "Kept every client this quarter.",
+      "challenge": "Two clients are way over scope.",
+      "submittedAt": "2026-10-16T06:10:00-05:00"
+    },
+    {
+      "id": "k-e-2026-10-e8",
+      "meetingId": "e-2026-10",
+      "memberId": "e8",
+      "win": "Two real CEO days. Wrote the hiring plan.",
+      "challenge": "Plant manager quit.",
+      "submittedAt": "2026-10-15T20:20:00-05:00"
+    },
+    {
+      "id": "k-e-2026-11-e3",
+      "meetingId": "e-2026-11",
+      "memberId": "e3",
+      "win": "Reseller accepted 32%, contract out.",
+      "challenge": "Onboarding their team without a partner manager.",
+      "submittedAt": "2026-10-29T12:00:00-05:00"
+    },
+    {
+      "id": "k-e-2026-11-e5",
+      "meetingId": "e-2026-11",
+      "memberId": "e5",
+      "win": "Have the hours data for every client.",
+      "challenge": "Nervous about the price conversation.",
+      "submittedAt": "2026-10-30T16:45:00-05:00"
+    },
+    {
+      "id": "k-e-2026-11-e8",
+      "meetingId": "e-2026-11",
+      "memberId": "e8",
+      "win": "Hired a new plant manager.",
+      "challenge": "Getting him up to speed while I'm out two days.",
+      "submittedAt": "2026-10-30T07:00:00-05:00"
+    }
+  ],
+  "asks": [
+    {
+      "id": "a-e1",
+      "memberId": "e5",
+      "title": "Script for a retainer price increase",
+      "detail": "If you've raised prices on a long-time client, what did you actually say? Looking for real wording.",
+      "createdAt": "2026-10-30T17:00:00-05:00",
+      "status": "open",
+      "replies": [
+        {
+          "memberId": "e1",
+          "text": "I led with the hours data and offered a reduced scope option. Happy to share my email.",
+          "createdAt": "2026-10-30T18:20:00-05:00",
+          "canHelp": true
+        }
+      ],
+      "needs": "deciding"
+    },
+    {
+      "id": "a-e2",
+      "memberId": "e2",
+      "title": "Intro to a good fractional HR person",
+      "detail": "Hiring our first manager. Need help with comp bands and an offer letter.",
+      "createdAt": "2026-10-28T09:15:00-05:00",
+      "status": "open",
+      "replies": [],
+      "needs": "hands"
+    },
+    {
+      "id": "a-e3",
+      "memberId": "e7",
+      "title": "Video editor for short case studies",
+      "detail": "Two filmed, need someone who can turn around 90-second edits in a week. Budget around $300 each.",
+      "createdAt": "2026-10-25T13:30:00-05:00",
+      "status": "open",
+      "replies": [
+        {
+          "memberId": "e3",
+          "text": "Our editor has room. I'll send you her portfolio.",
+          "createdAt": "2026-10-25T15:00:00-05:00",
+          "canHelp": true
+        },
+        {
+          "memberId": "e6",
+          "text": "Check that she can deliver captions too.",
+          "createdAt": "2026-10-26T08:10:00-05:00",
+          "canHelp": false
+        }
+      ],
+      "needs": "hands"
+    },
+    {
+      "id": "a-e4",
+      "memberId": "e4",
+      "title": "SBA lender recommendations",
+      "detail": "Want a second quote before I commit to anything.",
+      "createdAt": "2026-10-05T10:00:00-05:00",
+      "status": "resolved",
+      "replies": [
+        {
+          "memberId": "e8",
+          "text": "Live Oak did our equipment loan. Fast and fair.",
+          "createdAt": "2026-10-05T12:30:00-05:00",
+          "canHelp": true
+        }
+      ],
+      "needs": "exploring"
+    }
+  ],
+  "announcements": [
+    {
+      "id": "an-e1",
+      "authorId": "e1",
+      "title": "November: Dana on the hot seat, prep is in",
+      "body": "Dana's question is about raising retainers 15% with two clients at 48% of revenue. Read her prep before Friday so we can skip the background and get to advice. 7:00 sharp at Common Desk, room B.",
+      "createdAt": "2026-10-30T08:00:00-05:00",
+      "pinned": true,
+      "comments": [
+        {
+          "memberId": "e4",
+          "text": "Read it. I've got a story about our fleet client for you, Dana.",
+          "createdAt": "2026-10-30T09:12:00-05:00"
+        },
+        {
+          "memberId": "e5",
+          "text": "Thank you all. Bring the hard questions.",
+          "createdAt": "2026-10-30T10:40:00-05:00"
+        }
+      ]
+    },
+    {
+      "id": "an-e2",
+      "authorId": "e1",
+      "title": "December session is our annual planning meeting",
+      "body": "Dec 18 is our planning session. Bring a one-page 2027 plan: three goals, the one number you'll watch, and the hire you need most. Chris will share his template.",
+      "createdAt": "2026-10-28T12:00:00-05:00",
+      "pinned": false,
+      "comments": [
+        {
+          "memberId": "e6",
+          "text": "Template is posted in Ideas.",
+          "createdAt": "2026-10-28T13:30:00-05:00"
+        },
+        {
+          "memberId": "e8",
+          "text": "Can we start at 6:45 to get the extra time?",
+          "createdAt": "2026-10-29T06:50:00-05:00"
+        },
+        {
+          "memberId": "e1",
+          "text": "Yes, 6:45 start. Coffee will be ready.",
+          "createdAt": "2026-10-29T08:05:00-05:00"
+        }
+      ]
+    },
+    {
+      "id": "an-e3",
+      "authorId": "e3",
+      "title": "Brewers Guild conference passes",
+      "body": "I have two extra expo passes for Nov 18 in Dallas. Good for anyone selling to hospitality or food. Free to the group.",
+      "createdAt": "2026-10-26T17:40:00-05:00",
+      "pinned": false,
+      "comments": [
+        {
+          "memberId": "e2",
+          "text": "I'll take one. Restaurants are half our commercial calls.",
+          "createdAt": "2026-10-26T18:05:00-05:00"
+        }
+      ]
+    }
+  ],
+  "ideas": [
+    {
+      "id": "i-e1",
+      "memberId": "e6",
+      "type": "tool",
+      "title": "One-page 2027 plan template",
+      "note": "Three goals, one number, one hire, three risks. Make a copy and fill it in before Dec 18.",
+      "url": "https://docs.google.com/document/u/0/",
+      "createdAt": "2026-10-28T13:25:00-05:00",
+      "likes": [
+        "e1",
+        "e8",
+        "e4",
+        "e7"
+      ],
+      "comments": [
+        {
+          "memberId": "e8",
+          "text": "Used it already. Took 40 minutes.",
+          "createdAt": "2026-10-29T07:00:00-05:00"
+        }
+      ]
+    },
+    {
+      "id": "i-e2",
+      "memberId": "e5",
+      "type": "article",
+      "title": "Price increase letters that kept clients",
+      "note": "Real examples, including what to say when the client pushes back.",
+      "url": "https://hbr.org/topic/subject/pricing",
+      "createdAt": "2026-10-27T20:00:00-05:00",
+      "likes": [
+        "e7",
+        "e3"
+      ],
+      "comments": []
+    },
+    {
+      "id": "i-e3",
+      "memberId": "e2",
+      "type": "idea",
+      "title": "Pay techs a bonus for reviews that name them",
+      "note": "We started $10 per 5-star review that mentions the tech by name. Reviews went from 6 to 31 a month.",
+      "url": "",
+      "createdAt": "2026-10-25T19:10:00-05:00",
+      "likes": [
+        "e4",
+        "e8",
+        "e1",
+        "e6",
+        "e5"
+      ],
+      "comments": [
+        {
+          "memberId": "e4",
+          "text": "Stealing this for the shop.",
+          "createdAt": "2026-10-25T20:00:00-05:00"
+        },
+        {
+          "memberId": "e6",
+          "text": "Did quality of reviews hold up?",
+          "createdAt": "2026-10-25T09:00:00-05:00"
+        },
+        {
+          "memberId": "e2",
+          "text": "Yes. They're more specific, which helps sales too.",
+          "createdAt": "2026-10-25T11:30:00-05:00"
+        }
+      ]
+    },
+    {
+      "id": "i-e4",
+      "memberId": "e7",
+      "type": "podcast",
+      "title": "Acquired: the Costco episode",
+      "note": "Long, but the part on membership pricing is worth the drive.",
+      "url": "https://www.acquired.fm",
+      "createdAt": "2026-10-22T06:30:00-05:00",
+      "likes": [
+        "e3"
+      ],
+      "comments": []
+    },
+    {
+      "id": "i-e5",
+      "memberId": "e3",
+      "type": "tool",
+      "title": "ChurnZero alternative: a simple health score sheet",
+      "note": "Logins, tickets and invoice status in one sheet. Flags at-risk accounts every Monday.",
+      "url": "",
+      "createdAt": "2026-10-20T15:00:00-05:00",
+      "likes": [
+        "e1"
+      ],
+      "comments": []
+    },
+    {
+      "id": "i-e6",
+      "memberId": "e8",
+      "type": "link",
+      "title": "Texas Workforce skills grants",
+      "note": "They paid for half our CNC training last year. Applications open in January.",
+      "url": "https://www.twc.texas.gov",
+      "createdAt": "2026-10-18T12:00:00-05:00",
+      "likes": [
+        "e2",
+        "e4"
+      ],
+      "comments": []
+    },
+    {
+      "id": "i-e7",
+      "memberId": "e4",
+      "type": "other",
+      "title": "Saturday shifts: early numbers",
+      "note": "Three Saturdays in. Margin is 6 points higher than weekdays because there's no walk-in diagnostic work.",
+      "url": "",
+      "createdAt": "2026-10-28T16:00:00-05:00",
+      "likes": [
+        "e1",
+        "e5"
+      ],
+      "comments": []
+    }
+  ],
+  "books": [
+    {
+      "id": "b-e1",
+      "title": "Never Split the Difference",
+      "author": "Chris Voss",
+      "suggestedBy": "e5",
+      "why": "I need it for my retainer conversations. Tactical empathy is exactly the skill I'm missing.",
+      "createdAt": "2026-10-16T19:00:00-05:00",
+      "groupBook": true,
+      "comments": [
+        {
+          "memberId": "e1",
+          "text": "The calibrated questions chapter saved the Hendricks deal.",
+          "createdAt": "2026-10-26T21:00:00-05:00"
+        },
+        {
+          "memberId": "e4",
+          "text": "Halfway. Using 'How am I supposed to do that?' on vendors.",
+          "createdAt": "2026-10-29T18:00:00-05:00"
+        }
+      ]
+    },
+    {
+      "id": "b-e2",
+      "title": "Traction",
+      "author": "Gino Wickman",
+      "suggestedBy": "e8",
+      "why": "EOS gave our plant a weekly meeting that actually works.",
+      "createdAt": "2026-08-22T08:00:00-05:00",
+      "groupBook": false,
+      "comments": [
+        {
+          "memberId": "e6",
+          "text": "We run L10s too. Happy to show anyone our scorecard.",
+          "createdAt": "2026-08-25T10:00:00-05:00"
+        }
+      ]
+    },
+    {
+      "id": "b-e3",
+      "title": "Who: The A Method for Hiring",
+      "author": "Geoff Smart and Randy Street",
+      "suggestedBy": "e2",
+      "why": "I'm about to hire an ops manager and can't afford to get it wrong.",
+      "createdAt": "2026-10-18T21:00:00-05:00",
+      "groupBook": false,
+      "comments": []
+    },
+    {
+      "id": "b-e4",
+      "title": "The Six Types of Working Genius",
+      "author": "Patrick Lencioni",
+      "suggestedBy": "e7",
+      "why": "Explains why some of us love starting and hate finishing. Take the assessment first.",
+      "createdAt": "2026-09-20T07:00:00-05:00",
+      "groupBook": false,
+      "comments": [
+        {
+          "memberId": "e3",
+          "text": "Wonder and Discernment. Explains a lot about my roadmap.",
+          "createdAt": "2026-10-05T20:00:00-05:00"
+        }
+      ]
+    },
+    {
+      "id": "b-e5",
+      "title": "Profit First",
+      "author": "Mike Michalowicz",
+      "suggestedBy": "e6",
+      "why": "Simple cash system. How we got from 4% to 12% margin.",
+      "createdAt": "2026-07-30T12:00:00-05:00",
+      "groupBook": false,
+      "comments": []
+    },
+    {
+      "id": "b-e6",
+      "title": "Buy Back Your Time",
+      "author": "Dan Martell",
+      "suggestedBy": "e8",
+      "why": "The audit exercise showed me I spend 9 hours a week on things a $25/hr person could do.",
+      "createdAt": "2026-10-25T06:00:00-05:00",
+      "groupBook": false,
+      "comments": []
+    },
+    {
+      "id": "b-e7",
+      "title": "The Mom Test",
+      "author": "Rob Fitzpatrick",
+      "suggestedBy": "e3",
+      "why": "Short. How to ask customers questions they can't lie to you about.",
+      "createdAt": "2026-06-25T09:00:00-05:00",
+      "groupBook": false,
+      "comments": []
+    }
+  ],
+  "readingList": [
+    {
+      "bookId": "b-e1",
+      "memberId": "e5",
+      "status": "reading",
+      "updatedAt": "2026-10-16T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-e1",
+      "memberId": "e1",
+      "status": "finished",
+      "updatedAt": "2026-10-16T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-e1",
+      "memberId": "e4",
+      "status": "reading",
+      "updatedAt": "2026-10-17T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-e1",
+      "memberId": "e7",
+      "status": "finished",
+      "updatedAt": "2026-10-17T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-e1",
+      "memberId": "e2",
+      "status": "want",
+      "updatedAt": "2026-10-18T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-e1",
+      "memberId": "e3",
+      "status": "reading",
+      "updatedAt": "2026-10-18T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-e2",
+      "memberId": "e8",
+      "status": "finished",
+      "updatedAt": "2026-10-19T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-e2",
+      "memberId": "e6",
+      "status": "finished",
+      "updatedAt": "2026-10-19T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-e2",
+      "memberId": "e2",
+      "status": "reading",
+      "updatedAt": "2026-10-20T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-e2",
+      "memberId": "e4",
+      "status": "want",
+      "updatedAt": "2026-10-20T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-e3",
+      "memberId": "e2",
+      "status": "reading",
+      "updatedAt": "2026-10-21T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-e3",
+      "memberId": "e1",
+      "status": "want",
+      "updatedAt": "2026-10-21T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-e3",
+      "memberId": "e8",
+      "status": "want",
+      "updatedAt": "2026-10-22T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-e4",
+      "memberId": "e7",
+      "status": "finished",
+      "updatedAt": "2026-10-22T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-e4",
+      "memberId": "e3",
+      "status": "finished",
+      "updatedAt": "2026-10-23T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-e4",
+      "memberId": "e5",
+      "status": "finished",
+      "updatedAt": "2026-10-23T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-e4",
+      "memberId": "e1",
+      "status": "finished",
+      "updatedAt": "2026-10-24T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-e5",
+      "memberId": "e6",
+      "status": "finished",
+      "updatedAt": "2026-10-24T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-e5",
+      "memberId": "e5",
+      "status": "want",
+      "updatedAt": "2026-10-25T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-e5",
+      "memberId": "e4",
+      "status": "finished",
+      "updatedAt": "2026-10-25T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-e6",
+      "memberId": "e8",
+      "status": "finished",
+      "updatedAt": "2026-10-26T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-e6",
+      "memberId": "e2",
+      "status": "want",
+      "updatedAt": "2026-10-26T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-e7",
+      "memberId": "e3",
+      "status": "finished",
+      "updatedAt": "2026-10-27T20:00:00-05:00"
+    },
+    {
+      "bookId": "b-e7",
+      "memberId": "e1",
+      "status": "finished",
+      "updatedAt": "2026-10-27T20:00:00-05:00"
+    }
+  ],
+  "gettogethers": [
+    {
+      "id": "gt-e1",
+      "hostId": "e2",
+      "title": "Lunch: hiring an ops manager",
+      "kind": "lunch",
+      "datetime": "2026-11-10T12:00:00-06:00",
+      "location": "Torchy's, Burnet Rd",
+      "note": "Anyone who's hired a #2 operator. I'll buy the tacos.",
+      "visibility": "open",
+      "invitees": [],
+      "rsvps": [
+        {
+          "memberId": "e2",
+          "status": "yes"
+        },
+        {
+          "memberId": "e8",
+          "status": "yes"
+        },
+        {
+          "memberId": "e6",
+          "status": "yes"
+        },
+        {
+          "memberId": "e4",
+          "status": "maybe"
+        }
+      ]
+    },
+    {
+      "id": "gt-e2",
+      "hostId": "e8",
+      "title": "Plant tour at Park Precision",
+      "kind": "visit",
+      "datetime": "2026-11-19T15:30:00-06:00",
+      "location": "Park Precision, 880 Tech Ridge Blvd",
+      "note": "See the new 5-axis line. Safety glasses provided. Wear closed-toe shoes.",
+      "visibility": "open",
+      "invitees": [],
+      "rsvps": [
+        {
+          "memberId": "e8",
+          "status": "yes"
+        },
+        {
+          "memberId": "e1",
+          "status": "yes"
+        },
+        {
+          "memberId": "e3",
+          "status": "no"
+        }
+      ]
+    },
+    {
+      "id": "gt-e3",
+      "hostId": "e5",
+      "title": "Dinner: pricing war stories",
+      "kind": "dinner",
+      "datetime": "2026-11-12T18:30:00-06:00",
+      "location": "Lenoir, S 1st St",
+      "note": "Small table. Bring the price increase that went worst for you.",
+      "visibility": "closed",
+      "invitees": [
+        "e1",
+        "e3",
+        "e7"
+      ],
+      "rsvps": [
+        {
+          "memberId": "e5",
+          "status": "yes"
+        },
+        {
+          "memberId": "e1",
+          "status": "yes"
+        },
+        {
+          "memberId": "e7",
+          "status": "yes"
+        }
+      ]
+    },
+    {
+      "id": "gt-e4",
+      "hostId": "e1",
+      "title": "Coffee after the October session",
+      "kind": "coffee",
+      "datetime": "2026-10-16T09:15:00-05:00",
+      "location": "Common Desk cafe",
+      "note": "For anyone who wants to keep going on Luis's question.",
+      "visibility": "open",
+      "invitees": [],
+      "rsvps": [
+        {
+          "memberId": "e1",
+          "status": "yes"
+        },
+        {
+          "memberId": "e4",
+          "status": "yes"
+        },
+        {
+          "memberId": "e6",
+          "status": "yes"
+        }
+      ]
+    }
+  ]
+}
