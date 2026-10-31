@@ -201,3 +201,4 @@ How the swap will happen (details in `supabase/README.md`, "Switching the app to
 3. The invite, name-pick and switch-user handlers call `api.verifyInvite`, `api.join` and `api.signOut`, because the server now checks the invite code.
 
 The data calls need only steps 1 and 2. Step 3 is needed because a real login can't be checked in the browser.
+
