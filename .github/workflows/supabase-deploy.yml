@@ -81,5 +81,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          { echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"; echo; echo '```'; sed -e "s/$SUPABASE_DB_PASSWORD/***/g" -e "s/$CRON_SECRET/***/g" push.log 2>/dev/null | tail -n 120; echo '```'; } > body.md
+          python3 - <<'PY'
+          import os, pathlib
+          log = pathlib.Path('push.log').read_text(errors='replace') if pathlib.Path('push.log').exists() else '(no push.log)'
+          for k in ('SUPABASE_DB_PASSWORD', 'CRON_SECRET', 'SUPABASE_ACCESS_TOKEN'):
+              v = os.environ.get(k)
+              if v: log = log.replace(v, '***')
+          lines = log.splitlines()[-150:]
+          body = f"Run: {os.environ['GITHUB_SERVER_URL']}/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}\n\n```\n" + "\n".join(lines) + "\n```\n"
+          pathlib.Path('body.md').write_text(body)
+          PY
           gh issue create --title "Supabase deploy failed (run $GITHUB_RUN_NUMBER)" --body-file body.md || true
