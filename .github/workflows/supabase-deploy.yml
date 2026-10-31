@@ -58,8 +58,8 @@ jobs:
 
       - name: Apply migrations
         run: |
-          set -o pipefail
-          supabase db push --include-all --debug 2>&1 | tail -n 150 | tee push.log
+          supabase db push --include-all --yes -p "$SUPABASE_DB_PASSWORD" > push.log 2>&1 || { tail -n 150 push.log; exit 1; }
+          tail -n 40 push.log
 
       - name: Deploy Edge Functions
         run: |
