@@ -22,9 +22,9 @@ jobs:
         env:
           MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
         run: |
+          MIRROR_TOKEN="$(printf '%s' "$MIRROR_TOKEN" | tr -d '[:space:]')"
           if [ -z "$MIRROR_TOKEN" ]; then echo "MIRROR_TOKEN not set; skipping"; exit 0; fi
-          exec > >(tee "$GITHUB_WORKSPACE/push.log") 2>&1
-          set -ex
+          set -e
           mkdir -p /tmp/mirror && cp -r . /tmp/mirror/ && cd /tmp/mirror
           rm -rf .git supabase .github
           echo "flightclub.tpgmn.com" > CNAME
@@ -34,7 +34,8 @@ jobs:
           git config user.name "mirror-bot"; git config user.email "noreply@github.com"
           git add -A
           git commit -qm "Mirror of TPG-Dialer/mastermind@${GITHUB_SHA::7}"
-          git push --force "https://x-access-token:${MIRROR_TOKEN}@github.com/TPG-Dialer/mastermind-flightclub.git" main 
+          git push --force "https://x-access-token:${MIRROR_TOKEN}@github.com/TPG-Dialer/mastermind-flightclub.git" main 2>&1 | sed "s#${MIRROR_TOKEN}#***#g" | tee "$GITHUB_WORKSPACE/push.log"
+          test "${PIPESTATUS[0]}" -eq 0
       - name: Report failure as an issue
         if: failure()
         env:
