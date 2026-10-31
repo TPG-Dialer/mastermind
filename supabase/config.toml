@@ -1,0 +1,11 @@
+# Minimal Supabase CLI config. The project is linked in CI with --project-ref.
+project_id = "mastermind"
+
+[functions.join]
+verify_jwt = false
+[functions.schedule-notifications]
+verify_jwt = false
+[functions.send-notifications]
+verify_jwt = false
+[functions.generate-meetings]
+verify_jwt = false

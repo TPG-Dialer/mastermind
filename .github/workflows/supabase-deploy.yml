@@ -1,0 +1,70 @@
+name: Deploy to Supabase
+
+# Runs when anything under supabase/ changes on main, or by hand from the
+# Actions tab. Applies the SQL (schema, policies, seed, cron) as migrations,
+# deploys the four Edge Functions, and sets their secrets.
+on:
+  push:
+    branches: [main]
+    paths: ['supabase/**', '.github/workflows/supabase-deploy.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: supabase-deploy
+  cancel-in-progress: false
+
+env:
+  SUPABASE_PROJECT_REF: reqfsulfmmrzkzsqthvv
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+  SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+  APP_URL: https://tpg-dialer.github.io/mastermind/
+  ALLOWED_ORIGINS: https://tpg-dialer.github.io,http://localhost:8000,http://localhost:8765
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Derive a stable CRON_SECRET (never printed)
+        run: |
+          secret=$(printf '%s' "${SUPABASE_DB_PASSWORD}::mastermind-cron" | sha256sum | cut -c1-48)
+          echo "::add-mask::$secret"
+          echo "CRON_SECRET=$secret" >> "$GITHUB_ENV"
+
+      - name: Build migrations from the SQL files
+        run: |
+          set -e
+          cd supabase
+          rm -f migrations/*.sql
+          cp schema.sql   migrations/20261031000001_schema.sql
+          cp policies.sql migrations/20261031000002_policies.sql
+          cp seed.sql     migrations/20261031000003_seed.sql
+          sed -e "s#https://YOUR-PROJECT-REF.supabase.co#https://${SUPABASE_PROJECT_REF}.supabase.co#" \
+              -e "s#PASTE-THE-SAME-CRON_SECRET-HERE#${CRON_SECRET}#" \
+              cron.sql > migrations/20261031000004_cron.sql
+          ls -la migrations
+
+      - name: Link project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Apply migrations
+        run: supabase db push --include-all
+
+      - name: Deploy Edge Functions
+        run: |
+          for fn in join schedule-notifications send-notifications generate-meetings; do
+            supabase functions deploy "$fn" --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
+          done
+
+      - name: Set function secrets (dry-run until channels are configured)
+        run: |
+          supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" \
+            CRON_SECRET="$CRON_SECRET" \
+            DRY_RUN=true \
+            APP_URL="$APP_URL" \
+            ALLOWED_ORIGINS="$ALLOWED_ORIGINS"
