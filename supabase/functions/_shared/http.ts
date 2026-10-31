@@ -38,6 +38,9 @@ export function cronAuthorized(req: Request): boolean {
 }
 
 export function appLink(groupId: string, hash = ""): string {
+  // Each group has its own address (APP_URL_FAMILY / APP_URL_ENTREPRENEUR); APP_URL is the fallback with ?group=.
+  const perGroup = Deno.env.get(`APP_URL_${groupId.toUpperCase()}`);
+  if (perGroup) return `${perGroup.replace(/\/?$/, "/")}${hash}`;
   const base = (Deno.env.get("APP_URL") ?? "https://PLACEHOLDER.github.io/mastermind/").replace(/\/?$/, "/");
   return `${base}?group=${encodeURIComponent(groupId)}${hash}`;
 }

@@ -17,8 +17,8 @@ env:
   SUPABASE_PROJECT_REF: reqfsulfmmrzkzsqthvv
   SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
   SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-  APP_URL: https://tpg-dialer.github.io/mastermind/
-  ALLOWED_ORIGINS: https://tpg-dialer.github.io,http://localhost:8000,http://localhost:8765
+  APP_URL: https://shoreline.tpgmn.com/
+  ALLOWED_ORIGINS: https://shoreline.tpgmn.com,https://flightclub.tpgmn.com,http://shoreline.tpgmn.com,http://flightclub.tpgmn.com,https://tpg-dialer.github.io,http://localhost:8000,http://localhost:8765
 
 permissions:
   contents: read
@@ -84,6 +84,8 @@ jobs:
             CRON_SECRET="$CRON_SECRET" \
             DRY_RUN=true \
             APP_URL="$APP_URL" \
+            APP_URL_FAMILY="https://shoreline.tpgmn.com/" \
+            APP_URL_ENTREPRENEUR="https://flightclub.tpgmn.com/" \
             ALLOWED_ORIGINS="$ALLOWED_ORIGINS"
 
       - name: Report failure as an issue
