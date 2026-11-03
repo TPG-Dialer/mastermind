@@ -28,6 +28,9 @@ jobs:
           mkdir -p /tmp/mirror && cp -r . /tmp/mirror/ && cd /tmp/mirror
           rm -rf .git supabase .github
           echo "flightclub.tpgmn.com" > CNAME
+          # The default manifest on this site must be Flight Club's: iOS can read the default
+          # <link rel=manifest> before our script swaps it, and its start_url decides the group.
+          cp manifest-entrepreneur.webmanifest manifest.webmanifest
           # Pin the group so the root of this site is Flight Club even without the hostname rule.
           sed -i 's#<script src="app.js"></script>#<script>window.MASTERMIND_GROUP = window.MASTERMIND_GROUP || "entrepreneur";</script>\n  <script src="app.js"></script>#' index.html
           git init -q -b main

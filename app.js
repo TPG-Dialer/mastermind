@@ -12,10 +12,11 @@
 
   const params = new URLSearchParams(location.search);
   // Group comes from the address: flightclub.tpgmn.com -> entrepreneur, shoreline.tpgmn.com -> family,
-  // otherwise ?group= (GitHub Pages / local), otherwise family.
+  // otherwise ?group= (GitHub Pages / local), otherwise family. The address wins over ?group=
+  // so a home-screen icon saved with a stale start_url can't open the other group.
   const hostGroup = /^flightclub\./i.test(location.hostname) ? 'entrepreneur'
     : /^shoreline\./i.test(location.hostname) ? 'family' : null;
-  const requested = window.MASTERMIND_GROUP || params.get('group') || hostGroup;
+  const requested = hostGroup || window.MASTERMIND_GROUP || params.get('group');
   const GROUP = GROUPS.includes(requested) ? requested : 'family';
 
   /* ---------- Safe localStorage ---------- */
@@ -4070,7 +4071,7 @@
             : baseApi.realtimeConnected ? 'Live updates on' : 'Checks for updates every 30 seconds'}</span></span></div>`;
         })() : ''}
         <button class="row" id="switch-user"><span class="row-main"><span class="row-title">Switch user</span><span class="row-sub">${SUPA ? "Sign out on this device. You'll need the invite code again" : 'Pick a different name on this device'}</span></span>${chev}</button>
-        <a class="row" href="?group=${other}${params.get('backend') === 'local' ? '&backend=local' : ''}"><span class="row-main"><span class="row-title">Switch group</span><span class="row-sub">Open ${esc(otherName)}</span></span>${chev}</a>
+        <a class="row" href="${hostGroup ? `https://${other === 'family' ? 'shoreline' : 'flightclub'}.tpgmn.com/` : `?group=${other}${params.get('backend') === 'local' ? '&backend=local' : ''}`}"><span class="row-main"><span class="row-title">Switch group</span><span class="row-sub">Open ${esc(otherName)}</span></span>${chev}</a>
       </div>
       ${SUPA ? '' : `<h2 class="sec">Prototype</h2>
       <p class="soon-line">Your changes are saved on this device only. Reset to restore the sample data for ${esc(state.config.name)}.</p>
